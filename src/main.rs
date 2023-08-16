@@ -47,15 +47,23 @@ fn cmd(cmd: &str, args: &[&str]) {
 }
 
 fn main() {
-    let mut core = Core::new().unwrap();
     let loc_address = env::args().nth(1).unwrap().parse().unwrap();
     let rem_address = env::args().nth(2).unwrap().parse().unwrap();
+    let mut core = Core::new().unwrap();
+
+    // Create socket
     let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
     let (sender, receiver) = socket.framed(VecCodec(rem_address)).split();
+
+    // Create interface
     let tap = Iface::new(&env::args().nth(3).unwrap(), Mode::Tap).unwrap();
     let ip = &env::args().nth(4).unwrap();
+
+    // Enable interface
     cmd("ip", &["addr", "add", "dev", tap.name(), &ip]);
     cmd("ip", &["link", "set", "up", "dev", tap.name()]);
+
+    // Handshake
     let (sink, stream) = Async::new(tap, &core.handle()).unwrap().split();
     let reader = stream.forward(sender);
     let writer = receiver.forward(sink);
