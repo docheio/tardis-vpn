@@ -350,6 +350,8 @@ dependencies = [
 name = "tardis"
 version = "0.1.0"
 dependencies = [
+ "futures",
+ "tokio-core",
  "tun-tap",
 ]
 

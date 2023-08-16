@@ -6,4 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+futures = "0.1"
+tokio-core = "0.1.18"
+# tun-tap = { path = "./tuntap-0.1.4" }
 tun-tap = "0.1.4"

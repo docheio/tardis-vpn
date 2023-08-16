@@ -1,33 +1,37 @@
-use std::{process::Command, env};
+use std::env;
+use std::io::Result;
+use std::net::SocketAddr;
+
+use futures::{Future, Stream};
+use tokio_core::net::{UdpCodec, UdpSocket};
+use tokio_core::reactor::Core;
+
+use tun_tap::r#async::Async;
 use tun_tap::{Iface, Mode};
 
-fn cmd(cmd: &str, args: &[&str]) {
-    let command = Command::new(cmd)
-        .args(args)
-        .spawn()
-        .unwrap()
-        .wait()
-        .unwrap();
-    assert!(command.success(), "Failed to execute {}", cmd);
+struct VecCodec(SocketAddr);
+
+impl UdpCodec for VecCodec {
+    type In = Vec<u8>;
+    type Out = Vec<u8>;
+    fn decode(&mut self, _src: &SocketAddr, buf: &[u8]) -> Result<Self::In> {
+        Ok(buf.to_owned())
+    }
+    fn encode(&mut self, msg: Self::Out, buf: &mut Vec<u8>) -> SocketAddr {
+        buf.extend(&msg);
+        self.0
+    }
 }
 
 fn main() {
-    let argv: Vec<String> = env::args().collect();
-    assert!(argv.len() > 1, "Must set ip");
-
-    // Create TAP interface
-    let iface = Iface::new("tardis%d", Mode::Tap).unwrap();
-    eprintln!("Iface: {:?}", iface);
-
-    // Configure vpn interface
-    cmd("ip", &["addr", "add", "dev", iface.name(), "172.16.42.2/24"]);
-    cmd("ip", &["link", "set", "up", "dev", iface.name()]);
-
-
-    let mut buffer = vec![0; 1504];
-    loop {
-        let size = iface.recv(&mut buffer).unwrap();
-        assert!(size >= 4);
-        println!("packet: {:?}", &buffer[4..size]);
-    }
+    let mut core = Core::new().unwrap();
+    let loc_address = env::args().nth(1).unwrap().parse().unwrap();
+    let rem_address = env::args().nth(2).unwrap().parse().unwrap();
+    let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
+    let (sender, receiver) = socket.framed(VecCodec(rem_address)).split();
+    let tun = Iface::new("vpn%d", Mode::Tun).unwrap();
+    let (sink, stream) = Async::new(tun, &core.handle()).unwrap().split();
+    let reader = stream.forward(sender);
+    let writer = receiver.forward(sink);
+    core.run(reader.join(writer)).unwrap();
 }
