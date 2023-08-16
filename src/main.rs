@@ -10,10 +10,10 @@
 /*                                                                                                            */
 /* ********************************************************************************************************** */
 
-use std::env;
 use std::io::Result;
 use std::net::SocketAddr;
 use std::process::Command;
+use std::{env, process};
 
 use futures::{Future, Stream};
 use tokio_core::net::{UdpCodec, UdpSocket};
@@ -47,8 +47,14 @@ fn cmd(cmd: &str, args: &[&str]) {
 }
 
 fn main() {
-    let loc_address = env::args().nth(1).unwrap().parse().unwrap();
-    let rem_address = env::args().nth(2).unwrap().parse().unwrap();
+    let loc_address = env::args().nth(1).unwrap().parse().unwrap_or_else(|err| {
+        eprintln!("Unable to recognize listen ip: {}", err);
+        process::exit(1);
+    });
+    let rem_address = env::args().nth(2).unwrap().parse().unwrap_or_else(|err| {
+        eprintln!("Unable to recognize remote ip: {}", err);
+        process::exit(1);
+    });
     let mut core = Core::new().unwrap();
 
     // Create socket
@@ -56,8 +62,14 @@ fn main() {
     let (sender, receiver) = socket.framed(VecCodec(rem_address)).split();
 
     // Create interface
-    let tap = Iface::new(&env::args().nth(3).unwrap(), Mode::Tap).unwrap();
-    let ip = &env::args().nth(4).unwrap();
+    let name = &env::args().nth(3).expect("Unable to read Interface name");
+    let tap = Iface::new(&name, Mode::Tap).unwrap_or_else(|err| {
+        eprintln!("Failed to configure the interface name: {}", err);
+        process::exit(1);
+    });
+    let ip = &env::args()
+        .nth(4)
+        .expect("Unable to recognize remote interface IP");
 
     // Configure the „local“ (kernel) endpoint.
     cmd("ip", &["addr", "add", "dev", tap.name(), &ip]);
