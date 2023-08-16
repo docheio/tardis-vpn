@@ -41,16 +41,9 @@ fn main() {
     let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
     let (sender, receiver) = socket.framed(VecCodec(rem_address)).split();
     let tap = Iface::new(&env::args().nth(3).unwrap(), Mode::Tap).unwrap();
-    cmd(
-        "ip",
-        &[
-            "addr",
-            "add",
-            "dev",
-            tap.name(),
-            &env::args().nth(4).unwrap(),
-        ],
-    );
+    let ip = &env::args().nth(4).unwrap();
+    cmd("ip", &["addr", "add", "dev", tap.name(), &ip]);
+    cmd("ip", &["link", "set", "up", "dev", tap.name()]);
     let (sink, stream) = Async::new(tap, &core.handle()).unwrap().split();
     let reader = stream.forward(sender);
     let writer = receiver.forward(sink);
