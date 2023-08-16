@@ -29,8 +29,8 @@ fn main() {
     let rem_address = env::args().nth(2).unwrap().parse().unwrap();
     let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
     let (sender, receiver) = socket.framed(VecCodec(rem_address)).split();
-    let tun = Iface::new("vpn%d", Mode::Tun).unwrap();
-    let (sink, stream) = Async::new(tun, &core.handle()).unwrap().split();
+    let tap = Iface::new("vpn%d", Mode::Tap).unwrap();
+    let (sink, stream) = Async::new(tap, &core.handle()).unwrap().split();
     let reader = stream.forward(sender);
     let writer = receiver.forward(sink);
     core.run(reader.join(writer)).unwrap();
