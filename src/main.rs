@@ -19,7 +19,7 @@ use futures::{Future, Stream};
 use tokio_core::net::{UdpCodec, UdpSocket};
 use tokio_core::reactor::Core;
 
-use tun_tap::r#async::Async;
+use tun_tap::asynclib::Async;
 use tun_tap::{Iface, Mode};
 
 struct VecCodec(SocketAddr);
@@ -48,7 +48,7 @@ fn cmd(cmd: &str, args: &[&str]) {
 
 fn main() {
     let mut core = Core::new().unwrap();
-    
+
     // Read Local & Remote IP from args
     let loc_address = env::args().nth(1).unwrap().parse().unwrap_or_else(|err| {
         eprintln!("Unable to recognize listen ip: {}", err);

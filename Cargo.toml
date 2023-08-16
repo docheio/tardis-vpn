@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 futures = "0.1"
 tokio-core = "0.1.18"
-tun-tap = "0.1.4"
+tun-tap = { path="./modules/tuntap" }

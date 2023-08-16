@@ -1,0 +1,34 @@
+[package]
+name = "tun-tap"
+# Also don't forget to update the version in the html_root_url attribute in src/lib.rs
+version = "0.1.4"
+authors = ["Michal 'vorner' Vaner <vorner@vorner.cz>"]
+description = "TUN/TAP interface wrapper"
+documentation = "https://docs.rs/tun-tap"
+repository = "https://github.com/vorner/tuntap"
+readme = "README.md"
+keywords = ["tun", "tap", "network"]
+categories = ["network-programming"]
+license = "Apache-2.0/MIT"
+
+[badges]
+travis-ci = { repository = "vorner/tuntap" }
+maintenance = { status = "passively-maintained" }
+
+[features]
+default = ["tokio"]
+tokio = ["futures", "libc", "mio", "tokio-core"]
+
+[build-dependencies]
+cc = "~1"
+
+[dependencies]
+futures = { version = "~0.1", optional = true }
+libc = { version = "~0.2", optional = true }
+mio = { version = "~0.6", optional = true }
+tokio-core = { version = "~0.1", optional = true }
+
+[dev-dependencies]
+version-sync = "~0.9"
+etherparse = "~0.9"
+serial_test = "~0.4"
