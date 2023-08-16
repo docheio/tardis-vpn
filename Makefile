@@ -22,5 +22,5 @@ fclean:
 re: fclean all
 
 install:
-	sudo install /usr/local/bin ./target/release/tardis; \
+	sudo install ./target/release/tardis /usr/local/bin; \
 	cp ./service/tardisd.service /etc/systemd/system/;
