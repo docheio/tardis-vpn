@@ -6,7 +6,7 @@
 #  By: se-yukun <yukun@doche.io>                    +#+    +:+ +#+    +:+ +#+        +#++:++#++ +#++:++#       #
 #                                                  +#+    +#+ +#+    +#+ +#+        +#+    +#+ +#+             #
 #  Created: 2023/08/16 21:18:12 by se-yukun       #+#    #+# #+#    #+# #+#    #+# #+#    #+# #+#              #
-#  Updated: 2023/08/16 22:15:57 by se-yukun      #########  ########   ########  ###    ### ##########.io.     #
+#  Updated: 2023/08/16 22:46:03 by se-yukun      #########  ########   ########  ###    ### ##########.io.     #
 #                                                                                                              #
 # ************************************************************************************************************ #
 
@@ -22,4 +22,5 @@ fclean:
 re: fclean all
 
 install:
-	sudo install /usr/local/bin ./target/release/tardis
+	sudo install /usr/local/bin ./target/release/tardis; \
+	cp ./service/tardisd.service /etc/systemd/system/;
