@@ -25,3 +25,7 @@ re: fclean all
 install:
 	sudo install ./target/release/tardis /usr/local/bin; \
 	cp ./service/tardisd.service /etc/systemd/system/;
+
+systemd:
+	systemctl daemon-reload; \
+	systemctl enable --now tardisd;
