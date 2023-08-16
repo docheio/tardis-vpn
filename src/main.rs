@@ -47,6 +47,9 @@ fn cmd(cmd: &str, args: &[&str]) {
 }
 
 fn main() {
+    let mut core = Core::new().unwrap();
+    
+    // Read Local & Remote IP from args
     let loc_address = env::args().nth(1).unwrap().parse().unwrap_or_else(|err| {
         eprintln!("Unable to recognize listen ip: {}", err);
         process::exit(1);
@@ -55,7 +58,6 @@ fn main() {
         eprintln!("Unable to recognize remote ip: {}", err);
         process::exit(1);
     });
-    let mut core = Core::new().unwrap();
 
     // Create socket
     let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
