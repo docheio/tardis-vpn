@@ -59,7 +59,7 @@ fn main() {
     let tap = Iface::new(&env::args().nth(3).unwrap(), Mode::Tap).unwrap();
     let ip = &env::args().nth(4).unwrap();
 
-    // Enable interface
+    // Configure the „local“ (kernel) endpoint.
     cmd("ip", &["addr", "add", "dev", tap.name(), &ip]);
     cmd("ip", &["link", "set", "up", "dev", tap.name()]);
 
