@@ -17,15 +17,15 @@ clean:
 	rm -rf ./target/release
 
 fclean:
-	rm -rf ./target; \
+	rm -rf ./target;
 	rm -rf ./Cargo.lock;
 
 re: fclean all
 
 install:
-	sudo install ./target/release/tardis /usr/local/bin; \
+	sudo install ./target/release/tardis /usr/local/bin;
 	cp ./service/tardisd.service /etc/systemd/system/;
 
 systemd:
-	systemctl daemon-reload; \
+	systemctl daemon-reload;
 	systemctl enable --now tardisd;
