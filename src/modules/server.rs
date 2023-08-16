@@ -1,3 +1,4 @@
+use std::net::SocketAddr;
 use std::process::Command;
 use std::{env, process};
 
@@ -13,6 +14,29 @@ fn cmd(cmd: &str, args: &[&str]) {
         .wait()
         .unwrap();
     assert!(ecode.success(), "Failed to execte {}", cmd);
+}
+
+async fn accept(iface: &Iface, socket: &UdpSocket) -> SocketAddr {
+    let mut buffer = vec![0; 1504];
+    let (len, addr) = socket.recv_from(&mut buffer).await.unwrap();
+    iface.send(&mut buffer[4..len]).unwrap();
+    return addr;
+}
+
+async fn loop_send(rem_address: &str, iface: &Iface, socket: &UdpSocket) {
+    loop {
+        let mut buffer = vec![0; 1504];
+        let len = iface.recv(&mut buffer).unwrap();
+        socket.send_to(&buffer[..len], &rem_address).await.unwrap();
+    }
+}
+
+async fn loop_recv(iface: &Iface, socket: &UdpSocket) {
+    loop {
+        let mut buffer = vec![0; 1504];
+        let (len, _) = socket.recv_from(&mut buffer).await.unwrap();
+        iface.send(&mut buffer[4..len]).unwrap();
+    }
 }
 
 pub async fn server() {
@@ -40,10 +64,8 @@ pub async fn server() {
 
     // Handshake
     loop {
-        let mut buffer = vec![0; 1504];
-        let (len, addr) = socket.recv_from(&mut buffer).await.unwrap();
-        tap.send(&mut buffer[4..len]).unwrap();
-        let len = tap.recv(&mut buffer).unwrap();
-        socket.send_to(&buffer[..len], addr).await.unwrap();
+        let addr = accept(&tap, &socket).await;
+        let _ = loop_send(&addr.to_string(), &tap, &socket);
+        let _ = loop_recv(&tap, &socket);
     }
 }
