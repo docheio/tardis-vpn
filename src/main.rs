@@ -1,6 +1,7 @@
 use std::env;
 use std::io::Result;
 use std::net::SocketAddr;
+use std::process::Command;
 
 use futures::{Future, Stream};
 use tokio_core::net::{UdpCodec, UdpSocket};
@@ -23,6 +24,16 @@ impl UdpCodec for VecCodec {
     }
 }
 
+fn cmd(cmd: &str, args: &[&str]) {
+    let ecode = Command::new(cmd)
+        .args(args)
+        .spawn()
+        .unwrap()
+        .wait()
+        .unwrap();
+    assert!(ecode.success(), "Failed to execte {}", cmd);
+}
+
 fn main() {
     let mut core = Core::new().unwrap();
     let loc_address = env::args().nth(1).unwrap().parse().unwrap();
@@ -30,6 +41,16 @@ fn main() {
     let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
     let (sender, receiver) = socket.framed(VecCodec(rem_address)).split();
     let tap = Iface::new("vpn%d", Mode::Tap).unwrap();
+    cmd(
+        "ip",
+        &[
+            "addr",
+            "add",
+            "dev",
+            tap.name(),
+            &env::args().nth(3).unwrap(),
+        ],
+    );
     let (sink, stream) = Async::new(tap, &core.handle()).unwrap().split();
     let reader = stream.forward(sender);
     let writer = receiver.forward(sink);

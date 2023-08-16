@@ -1,0 +1,12 @@
+[Unit]
+Description=tardisd
+After=network.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/tardis
+ExecStop=/bin/kill -WINCH ${MAINPID}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
