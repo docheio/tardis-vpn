@@ -69,11 +69,11 @@ fn main() {
         eprintln!("Failed to configure the interface name: {}", err);
         process::exit(1);
     });
+
+    // Configure the „local“ (kernel) endpoint.
     let ip = &env::args()
         .nth(4)
         .expect("Unable to recognize remote interface IP");
-
-    // Configure the „local“ (kernel) endpoint.
     cmd("ip", &["addr", "add", "dev", tap.name(), &ip]);
     cmd("ip", &["link", "set", "up", "dev", tap.name()]);
 
