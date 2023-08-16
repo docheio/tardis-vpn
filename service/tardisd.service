@@ -17,7 +17,7 @@ After=network.service
 [Service]
 Type=simple
 ExecStart=/bin/bash -ec "\
-    LISTEN=10.0.2.2:30000; \
+    LISTEN=0.0.0.0:30000; \
     TARGET=192.168.100.1:30000; \
     IFNAME=vpn0; \
     IP=172.16.42.1/24; \
