@@ -1,12 +1,8 @@
-use std::io::{self, Result};
-use std::net::{IpAddr, SocketAddr};
 use std::process::Command;
 use std::{env, process};
 
-use futures::{Future, Stream};
 use tokio::net::UdpSocket;
 
-use tun_tap::asynclib::Async;
 use tun_tap::{Iface, Mode};
 
 fn cmd(cmd: &str, args: &[&str]) {

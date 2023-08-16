@@ -18,9 +18,10 @@ After=network.service
 Type=simple
 ExecStart=/bin/bash -ec "\
     LISTEN=0.0.0.0:30000; \
+    TARGET=172.105.222.222:30000; \
     IFNAME=vpn0; \
     IP=172.16.42.1/24; \
-    tardis server $LISTEN $IFNAME $IP"
+    tardis peer $LISTEN $TARGET $IFNAME $IP"
 ExecStop=/bin/kill -WINCH ${MAINPID}
 Restart=always
 
