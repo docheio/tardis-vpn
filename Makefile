@@ -17,6 +17,6 @@ clean:
 	rm -rf ./target/release
 
 fclean:
-	rm -rf ./target
+	rm -rf ./target ./Cargo.lock
 
 re: fclean all
