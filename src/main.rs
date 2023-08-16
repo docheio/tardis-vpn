@@ -15,8 +15,7 @@ use std::env;
 
 use modules::peer::peer;
 use modules::server::server;
-
-fn client() {}
+use modules::client::client;
 
 #[tokio::main]
 async fn main() {
@@ -26,7 +25,7 @@ async fn main() {
     } else if mode == "server" {
         server().await;
     } else if mode == "client" {
-        client();
+        client().await;
     } else {
         eprintln!("Unable to select mode");
     }
