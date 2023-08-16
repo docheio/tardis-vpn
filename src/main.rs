@@ -40,7 +40,7 @@ fn main() {
     let rem_address = env::args().nth(2).unwrap().parse().unwrap();
     let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
     let (sender, receiver) = socket.framed(VecCodec(rem_address)).split();
-    let tap = Iface::new("vpn%d", Mode::Tap).unwrap();
+    let tap = Iface::new(&env::args().nth(3).unwrap(), Mode::Tap).unwrap();
     cmd(
         "ip",
         &[
@@ -48,7 +48,7 @@ fn main() {
             "add",
             "dev",
             tap.name(),
-            &env::args().nth(3).unwrap(),
+            &env::args().nth(4).unwrap(),
         ],
     );
     let (sink, stream) = Async::new(tap, &core.handle()).unwrap().split();

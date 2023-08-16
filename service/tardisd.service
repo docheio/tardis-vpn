@@ -4,7 +4,14 @@ After=network.service
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/tardis
+ExecStart=/bin/sh -ec '\
+LISTEN=10.0.2.2:30000
+TARGET=192.168.100.2:30000
+IFNAME=vpn0
+IP=172.16.42.1/24
+tardis $LISTEN $TARGET $IFNAME $IP
+ip link set up dev $IFNAME
+'
 ExecStop=/bin/kill -WINCH ${MAINPID}
 Restart=always
 
