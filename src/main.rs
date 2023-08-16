@@ -11,8 +11,9 @@
 /* ********************************************************************************************************** */
 
 use std::io::Result;
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::process::Command;
+use std::str::FromStr;
 use std::{env, process};
 
 use futures::{Future, Stream};
@@ -46,40 +47,28 @@ fn cmd(cmd: &str, args: &[&str]) {
     assert!(ecode.success(), "Failed to execte {}", cmd);
 }
 
-fn main() {
-    let mut core = Core::new().unwrap();
-
+async fn server() {
     // Read Local & Remote IP from args
-    let loc_address = env::args().nth(1).unwrap().parse().unwrap_or_else(|err| {
-        eprintln!("Unable to recognize listen ip: {}", err);
-        process::exit(1);
-    });
-    let rem_address = env::args().nth(2).unwrap().parse().unwrap_or_else(|err| {
-        eprintln!("Unable to recognize remote ip: {}", err);
-        process::exit(1);
-    });
+    let loc_address_str = env::args().nth(2).expect("Unable to recognize listen IP");
+    let loc_address = loc_address_str
+        .parse::<SocketAddr>()
+        .expect("Unable to recognize listen IP");
 
     // Create socket
-    let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
-    let (sender, receiver) = socket.framed(VecCodec(rem_address)).split();
+    let mut core = Core::new().unwrap();
+    let socket = UdpSocket::bind(&loc_address, &core.handle());
+}
 
-    // Create interface
-    let name = &env::args().nth(3).expect("Unable to read Interface name");
-    let tap = Iface::new(&name, Mode::Tap).unwrap_or_else(|err| {
-        eprintln!("Failed to configure the interface name: {}", err);
-        process::exit(1);
-    });
+fn client() {}
 
-    // Configure the „local“ (kernel) endpoint.
-    let ip = &env::args()
-        .nth(4)
-        .expect("Unable to recognize remote interface IP");
-    cmd("ip", &["addr", "add", "dev", tap.name(), &ip]);
-    cmd("ip", &["link", "set", "up", "dev", tap.name()]);
-
-    // Handshake
-    let (sink, stream) = Async::new(tap, &core.handle()).unwrap().split();
-    let reader = stream.forward(sender);
-    let writer = receiver.forward(sink);
-    core.run(reader.join(writer)).unwrap();
+#[tokio::main]
+async fn main() {
+    let mode = env::args().nth(2).expect("Unable to select mode");
+    if mode == "server" {
+        server().await;
+    } else if mode == "client" {
+        client();
+    } else {
+        eprintln!("Unable to select mode");
+    }
 }
