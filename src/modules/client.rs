@@ -60,9 +60,8 @@ pub async fn client() {
     });
 
     // Handshake
+    socket.connect(&rem_address).await.unwrap();
     let _ = loop_send(&rem_address, &tap, &socket);
-    println!("ok0");
     let _ = loop_recv(&tap, &socket);
-    println!("ok1");
     loop {}
 }
