@@ -64,6 +64,7 @@ pub async fn server() {
         eprintln!("Failed to open socket: {}", err);
         process::exit(1);
     });
+    println!("ok0");
     // Handshake
     loop {
         let addr = accept(&tap, &socket).await;
