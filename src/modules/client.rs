@@ -61,7 +61,8 @@ pub async fn client() {
 
     // Handshake
     let _ = loop_send(&rem_address, &tap, &socket);
-    println!("ok");
+    println!("ok0");
     let _ = loop_recv(&tap, &socket);
+    println!("ok1");
     loop {}
 }
