@@ -17,7 +17,6 @@ use std::{env, process};
 
 use tokio::net::UdpSocket;
 
-use tokio::runtime::Runtime;
 use tun_tap::{Iface, Mode};
 
 fn cmd(cmd: &str, args: &[&str]) {
@@ -102,6 +101,6 @@ pub async fn server() {
             }
         }
     });
-    writer;
-    reader.await;
+    writer.await.unwrap();
+    reader.await.unwrap();
 }
