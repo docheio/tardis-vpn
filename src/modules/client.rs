@@ -78,4 +78,5 @@ pub async fn client() {
 
     // Handshake
     udp_connecter(&socket, &iface, &rem_address).await;
+    loop {}
 }

@@ -78,4 +78,5 @@ pub async fn server() {
     });
 
     udp_accepter(&socket, &iface).await;
+    loop {}
 }
