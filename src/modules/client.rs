@@ -12,6 +12,7 @@
 
 use std::net::SocketAddr;
 use std::process::Command;
+use std::sync::Arc;
 use std::{env, process};
 
 use tokio::net::UdpSocket;
@@ -63,19 +64,39 @@ pub async fn client() {
     cmd("ip", &["link", "set", "up", "dev", iface.name()]);
 
     // Handshake
-    let mut buf = [0; 1504];
     socket.connect(&rem_address).await.unwrap_or_else(|err| {
         eprintln!("Unable to connect to server: {}", err);
         process::exit(1);
     });
-    loop {
-        let len = iface.recv(&mut buf).unwrap();
-        if len > 4 {
-            socket.send(&buf[4..len]).await.unwrap();
-            println!("send: {:?}", len - 4);
+
+    let iface = Arc::new(iface);
+    let iface_writer = Arc::clone(&iface);
+    let iface_reader = Arc::clone(&iface);
+    let socket = Arc::new(socket);
+    let socket_send = socket.clone();
+    let socket_recv = socket.clone();
+
+    let mut buf = vec![0; 1500];
+    socket.send(&mut buf).await.unwrap();
+
+    let writer = tokio::spawn(async move {
+        loop {
+            let mut buf = vec![0; 1500];
+            let len = socket_recv.recv(&mut buf).await.unwrap();
+            println!("recv: {:?}", len);
+            iface_writer.send(&buf[..len]).unwrap();
         }
-        let len = socket.recv(&mut buf).await.unwrap();
-        println!("recv: {:?}", len);
-        iface.send(&buf[..len]).unwrap();
-    }
+    });
+    let reader = tokio::spawn(async move {
+        loop {
+            let mut buf = vec![0; 1504];
+            let len = iface_reader.recv(&mut buf).unwrap();
+            if len > 4 {
+                socket_send.send(&buf[4..len]).await.unwrap();
+                println!("send: {:?}", len);
+            }
+        }
+    });
+    writer.await.unwrap();
+    reader.await.unwrap();
 }
