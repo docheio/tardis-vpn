@@ -38,11 +38,11 @@ pub async fn peer() {
     let mut core = Core::new().unwrap();
 
     // Read Local & Remote IP from args
-    let loc_address = env::args().nth(1).unwrap().parse().unwrap_or_else(|err| {
+    let loc_address = env::args().nth(2).unwrap().parse().unwrap_or_else(|err| {
         eprintln!("Unable to recognize listen ip: {}", err);
         process::exit(1);
     });
-    let rem_address = env::args().nth(2).unwrap().parse().unwrap_or_else(|err| {
+    let rem_address = env::args().nth(3).unwrap().parse().unwrap_or_else(|err| {
         eprintln!("Unable to recognize remote ip: {}", err);
         process::exit(1);
     });
@@ -52,7 +52,7 @@ pub async fn peer() {
     let (sender, receiver) = socket.framed(VecCodec(rem_address)).split();
 
     // Create interface
-    let name = &env::args().nth(3).expect("Unable to read Interface name");
+    let name = &env::args().nth(4).expect("Unable to read Interface name");
     let tap = Iface::new(&name, Mode::Tap).unwrap_or_else(|err| {
         eprintln!("Failed to configure the interface name: {}", err);
         process::exit(1);
@@ -60,7 +60,7 @@ pub async fn peer() {
 
     // Configure the „local“ (kernel) endpoint.
     let ip = &env::args()
-        .nth(4)
+        .nth(5)
         .expect("Unable to recognize remote interface IP");
     cmd("ip", &["addr", "add", "dev", tap.name(), &ip]);
     cmd("ip", &["link", "set", "up", "dev", tap.name()]);
