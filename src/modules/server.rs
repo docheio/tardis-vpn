@@ -50,7 +50,7 @@ pub async fn server() {
     println!("ok1");
     let (_, rem_address) = socket.recv_from(&mut buf).unwrap();
     println!("ok2");
-    let (sender, receiver) = socket.framed(VecCodec(rem_address)).split();
+    // let (sender, receiver) = socket.framed(VecCodec(rem_address)).split();
 
     // Create interface
     let name = &env::args().nth(3).expect("Unable to read Interface name");
@@ -67,8 +67,8 @@ pub async fn server() {
     cmd("ip", &["link", "set", "up", "dev", tap.name()]);
 
     // Handshake
-    let (sink, stream) = Async::new(tap, &core.handle()).unwrap().split();
-    let reader = stream.forward(sender);
-    let writer = receiver.forward(sink);
-    core.run(reader.join(writer)).unwrap();
+    // let (sink, stream) = Async::new(tap, &core.handle()).unwrap().split();
+    // let reader = stream.forward(sender);
+    // let writer = receiver.forward(sink);
+    // core.run(reader.join(writer)).unwrap();
 }
