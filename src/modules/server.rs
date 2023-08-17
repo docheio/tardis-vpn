@@ -12,6 +12,7 @@
 
 use std::net::SocketAddr;
 use std::process::Command;
+use std::sync::Arc;
 use std::{env, process};
 
 use tokio::net::UdpSocket;
@@ -60,15 +61,46 @@ pub async fn server() {
     cmd("ip", &["link", "set", "up", "dev", iface.name()]);
 
     // Handshake
-    let mut buf = [0; 1504];
-    loop {
-        let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
-        println!("recv: {:?}", len);
-        iface.send(&buf[..len]).unwrap();
-        let len = iface.recv(&mut buf).unwrap();
-        if len > 4 {
-            socket.send_to(&buf[4..len], addr).await.unwrap();
-            println!("send: {:?}", len);
+    // let mut buf = [0; 1504];
+    // loop {
+    //     let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
+    //     println!("recv: {:?}", len);
+    //     iface.send(&buf[..len]).unwrap();
+    //     let len = iface.recv(&mut buf).unwrap();
+    //     if len > 4 {
+    //         socket.send_to(&buf[4..len], addr).await.unwrap();
+    //         println!("send: {:?}", len);
+    //     }
+    // }
+
+    let iface = Arc::new(iface);
+    let iface_writer = Arc::clone(&iface);
+    let iface_reader = Arc::clone(&iface);
+    let socket = Arc::new(socket);
+    let socket_send = socket.clone();
+    let socket_recv = socket.clone();
+
+    let mut buf = vec![0; 1500];
+    let (_, addr) = socket.recv_from(&mut buf).await.unwrap();
+
+    let writer = tokio::spawn(async move {
+        loop {
+            let mut buf = vec![0; 1500];
+            let (len, _) = socket_recv.recv_from(&mut buf).await.unwrap();
+            println!("recv: {:?}", len);
+            iface_writer.send(&buf[..len]).unwrap();
         }
-    }
+    });
+    let reader = tokio::spawn(async move {
+        loop {
+            let mut buf = vec![0; 1504];
+            let len = iface_reader.recv(&mut buf).unwrap();
+            if len > 4 {
+                socket_send.send_to(&buf[4..len], addr).await.unwrap();
+                println!("send: {:?}", len);
+            }
+        }
+    });
+    writer.await.unwrap();
+    reader.await.unwrap();
 }
