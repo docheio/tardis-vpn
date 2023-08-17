@@ -22,4 +22,8 @@ make install
 ```bash
 # Must edit config „/etc/systemd/system/tardisd.service“
 systemctl enable --now tardisd
+
+# or
+
+tardis peer <LISTEN-IP:PORT> <TARGET-IP:PORT> <INTERFACE-NAME> <INTERFACE-IP/IP-RANGE>
 ```
