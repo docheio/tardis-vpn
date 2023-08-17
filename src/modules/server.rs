@@ -12,7 +12,8 @@
 
 use std::net::SocketAddr;
 use std::process::Command;
-use std::{env, process};
+use std::sync::Arc;
+use std::{env, process, thread};
 
 use tokio::net::UdpSocket;
 
@@ -44,6 +45,9 @@ pub async fn server() {
         eprintln!("Unable to bind udp socket: {}", err);
         process::exit(1);
     });
+    let socket = Arc::new(socket);
+    let socket_writer = Arc::clone(&socket);
+    let socket_reader = Arc::clone(&socket);
 
     // Create interface
     let name = &env::args().nth(3).expect("Unable to read Interface name");
@@ -51,6 +55,9 @@ pub async fn server() {
         eprintln!("Failed to configure the interface name: {}", err);
         process::exit(1);
     });
+    let iface = Arc::new(iface);
+    let iface_writer = Arc::clone(&iface);
+    let iface_reader = Arc::clone(&iface);
 
     // Configure the „local“ (kernel) endpoint.
     let ip = &env::args()
@@ -61,10 +68,32 @@ pub async fn server() {
 
     // Handshake
     let mut buf = [0; 1504];
-    loop {
-        let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
-        iface.send(&buf[..len]).unwrap();
-        let len = iface.recv(&mut buf).unwrap();
-        socket.send_to(&buf[..len], addr).await.unwrap();
-    }
+    let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
+    iface.send(&buf[..len]).unwrap();
+    thread::spawn(move || {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        rt.block_on(async {
+            let mut buf = [0; 1504];
+            loop {
+                let (len, _) = socket_reader.recv_from(&mut buf).await.unwrap();
+                iface_writer.send(&buf[..len]).unwrap();
+            }
+        });
+    });
+    thread::spawn(move || {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        rt.block_on(async {
+            let mut buf = [0; 1504];
+            loop {
+                let len = iface_reader.recv(&mut buf).unwrap();
+                socket_writer.send_to(&buf[4..len], addr).await.unwrap();
+            }
+        });
+    });
 }
