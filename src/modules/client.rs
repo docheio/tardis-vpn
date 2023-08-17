@@ -46,9 +46,10 @@ pub async fn client() {
     socket.connect(&rem_address).await.unwrap();
     loop {
         let mut buf = vec![0; 1504];
+        let str = String::from("test");
+        let len = socket.send(&str.into_bytes()).await.unwrap();
+        println!("{:?} bytes sent", len);
         let len = socket.recv(&mut buf).await.unwrap();
         println!("{:?} bytes received from {:?}", len, rem_address);
-        let len = socket.send(&buf[..len]).await.unwrap();
-        println!("{:?} bytes sent", len);
     }
 }
