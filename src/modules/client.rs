@@ -73,8 +73,8 @@ pub async fn client() {
     let iface_writer = Arc::clone(&iface);
     let iface_reader = Arc::clone(&iface);
     let socket = Arc::new(socket);
-    let socket_send = socket.clone();
     let socket_recv = socket.clone();
+    let socket_send = socket.clone();
 
     let mut buf = vec![0; 1500];
     socket.send(&mut buf).await.unwrap();
@@ -83,8 +83,10 @@ pub async fn client() {
         loop {
             let mut buf = vec![0; 1500];
             let len = socket_recv.recv(&mut buf).await.unwrap();
-            println!("recv: {:?}", len);
-            iface_writer.send(&buf[..len]).unwrap();
+            if len > 0 {
+                println!("recv: {:?}", len);
+                iface_writer.send(&buf[..len]).unwrap();
+            }
         }
     });
     let reader = tokio::spawn(async move {
