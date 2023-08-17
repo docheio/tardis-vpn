@@ -25,5 +25,5 @@ systemctl enable --now tardisd
 
 # or
 
-tardis peer <LISTEN-IP:PORT> <TARGET-IP:PORT> <INTERFACE-NAME> <INTERFACE-IP/IP-RANGE>
+tardis peer <LISTEN-IP>:<PORT> <TARGET-IP>:<PORT> <INTERFACE-NAME> <INTERFACE-IP>/<IP-RANGE>
 ```
