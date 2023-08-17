@@ -53,7 +53,10 @@ pub async fn client() {
     cmd("ip", &["link", "set", "up", "dev", tap.name()]);
 
     // Create socket
-    let socket = UdpSocket::bind(&loc_address).await.unwrap();
+    let socket = UdpSocket::bind(&loc_address).await.unwrap_or_else(|err| {
+        eprintln!("Failed to open socket: {}", err);
+        process::exit(1);
+    });
 
     // Handshake
     let _ = loop_send(&rem_address, &tap, &socket);
