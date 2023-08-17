@@ -65,6 +65,6 @@ pub async fn server() {
         let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
         iface.send(&buf[..len]).unwrap();
         let len = iface.recv(&mut buf).unwrap();
-        socket.send_to(&buf[4..len], addr).await.unwrap();
+        socket.send_to(&buf[..len], addr).await.unwrap();
     }
 }
