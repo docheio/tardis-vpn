@@ -17,6 +17,7 @@ use std::{env, process};
 
 use tokio::net::UdpSocket;
 
+use tokio::runtime::Runtime;
 use tun_tap::{Iface, Mode};
 
 fn cmd(cmd: &str, args: &[&str]) {
@@ -97,6 +98,10 @@ pub async fn client() {
             }
         }
     });
-    writer.await.unwrap();
-    reader.await.unwrap();
+    let rt = Runtime::new().unwrap();
+    rt.block_on(async move {
+        tokio::spawn(async { writer.await });
+        tokio::spawn(async { reader.await });
+    });
+    loop {}
 }
