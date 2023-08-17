@@ -66,8 +66,8 @@ pub async fn server() {
         println!("recv: {:?}", len);
         iface.send(&buf[..len]).unwrap();
         let len = iface.recv(&mut buf).unwrap();
-        if len > 4 {
-            socket.send_to(&buf[4..len], addr).await.unwrap();
+        if len > 0 {
+            socket.send_to(&buf[..len], addr).await.unwrap();
             println!("send: {:?}", len);
         }
     }
