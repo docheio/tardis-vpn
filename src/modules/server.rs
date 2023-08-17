@@ -33,6 +33,7 @@ async fn udp_to_iface_loop(socket: &UdpSocket, iface: &Iface) {
 async fn iface_to_udp(socket: &UdpSocket, iface: &Iface, addr: &SocketAddr) {
     let mut buf = vec![0; 1500];
     let len = iface.recv(&mut buf).unwrap();
+    println!("{:?}", buf.clone());
     let _ = socket.send_to(&mut buf[..len], &addr);
 }
 
