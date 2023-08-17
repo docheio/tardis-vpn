@@ -27,6 +27,8 @@ build:
 update:
 	git pull;
 
+upgrade: update build install
+
 install:
 	sudo install ./target/release/tardis /usr/local/bin;
 	cp ./service/tardisd.service /etc/systemd/system/;
