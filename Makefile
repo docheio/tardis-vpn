@@ -19,7 +19,7 @@ fclean:
 	rm -rf ./target;
 	rm -rf ./Cargo.lock;
 
-re: fclean all
+re: fclean build
 
 build:
 	cargo build --release;
