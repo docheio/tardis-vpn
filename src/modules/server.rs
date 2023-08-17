@@ -19,7 +19,7 @@ fn cmd(cmd: &str, args: &[&str]) {
 async fn udp_to_iface(socket: &UdpSocket, iface: &Iface) -> SocketAddr {
     let mut buf = vec![0; 1500];
     let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
-    println!("{:?}", String::from_utf8(buf.clone()).unwrap());
+    println!("{:?}", String::from_utf8(buf.clone()[..len].to_vec()).unwrap());
     iface.send(&mut buf[..len]).unwrap();
     return addr;
 }
