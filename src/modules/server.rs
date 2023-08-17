@@ -70,7 +70,7 @@ pub async fn server() {
     let mut buf = [0; 1504];
     let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
     iface.send(&buf[..len]).unwrap();
-    thread::spawn(move || {
+    let reader = thread::spawn(move || {
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -79,11 +79,12 @@ pub async fn server() {
             let mut buf = [0; 1504];
             loop {
                 let (len, _) = socket_reader.recv_from(&mut buf).await.unwrap();
+
                 iface_writer.send(&buf[..len]).unwrap();
             }
         });
     });
-    thread::spawn(move || {
+    let writer = thread::spawn(move || {
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -92,8 +93,12 @@ pub async fn server() {
             let mut buf = [0; 1504];
             loop {
                 let len = iface_reader.recv(&mut buf).unwrap();
-                socket_writer.send_to(&buf[4..len], addr).await.unwrap();
+                if len > 4 {
+                    socket_writer.send_to(&buf[4..len], addr).await.unwrap();
+                }
             }
         });
     });
+    reader.join().unwrap();
+    writer.join().unwrap();
 }
