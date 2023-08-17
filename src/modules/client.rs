@@ -98,6 +98,6 @@ pub async fn client() {
             }
         }
     });
-    writer.await;
+    writer;
     reader.await;
 }

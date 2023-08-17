@@ -102,6 +102,6 @@ pub async fn server() {
             }
         }
     });
-    writer.await;
+    writer;
     reader.await;
 }
