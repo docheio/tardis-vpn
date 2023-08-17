@@ -45,8 +45,11 @@ pub async fn server() {
 
     // Create socket
     let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
+    println!("ok0");
     let mut buf = vec![0; 10];
+    println!("ok1");
     let (_, rem_address) = socket.recv_from(&mut buf).unwrap();
+    println!("ok2");
     let (sender, receiver) = socket.framed(VecCodec(rem_address)).split();
 
     // Create interface
