@@ -19,7 +19,7 @@ fn cmd(cmd: &str, args: &[&str]) {
 async fn udp_to_iface(socket: &UdpSocket, iface: &Iface) -> SocketAddr {
     let mut buf = vec![0; 1500];
     let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
-    println!("{:?}", String::from_utf8(buf.clone()[..len].to_vec()).unwrap());
+    println!("{:?}", buf.clone());
     let _ = iface.send(&mut buf[..len]);
     return addr;
 }
@@ -31,10 +31,12 @@ async fn udp_to_iface_loop(socket: &UdpSocket, iface: &Iface) {
 }
 
 async fn iface_to_udp(socket: &UdpSocket, iface: &Iface, addr: &SocketAddr) {
-    let mut buf = vec![0; 1500];
+    let mut buf = vec![0; 1504];
     let len = iface.recv(&mut buf).unwrap();
     println!("{:?}", buf.clone());
-    let _ = socket.send_to(&mut buf[..len], &addr);
+    if len > 4 {
+        let _ = socket.send_to(&mut buf[4..len], &addr);
+    }
 }
 
 async fn iface_to_udp_loop(socket: &UdpSocket, iface: &Iface, addr: &SocketAddr) {
@@ -75,8 +77,5 @@ pub async fn server() {
         process::exit(1);
     });
 
-    loop {
-        udp_accepter(&socket, &iface).await;
-        println!("Accepted")
-    }
+    udp_accepter(&socket, &iface).await;
 }

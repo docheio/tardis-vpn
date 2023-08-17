@@ -15,6 +15,40 @@ fn cmd(cmd: &str, args: &[&str]) {
     assert!(ecode.success(), "Failed to execte {}", cmd);
 }
 
+async fn udp_to_iface(socket: &UdpSocket, iface: &Iface) {
+    let mut buf = vec![0; 1500];
+    let len = socket.recv(&mut buf).await.unwrap();
+    println!("{:?}", buf.clone());
+    let _ = iface.send(&mut buf[..len]);
+}
+
+async fn udp_to_iface_loop(socket: &UdpSocket, iface: &Iface) {
+    loop {
+        udp_to_iface(&socket, &iface).await;
+    }
+}
+
+async fn iface_to_udp(socket: &UdpSocket, iface: &Iface) {
+    let mut buf = vec![0; 1504];
+    let len = iface.recv(&mut buf).unwrap();
+    println!("{:?}", buf.clone());
+    if len > 4 {
+        let _ = socket.send(&mut buf[4..len]);
+    }
+}
+
+async fn iface_to_udp_loop(socket: &UdpSocket, iface: &Iface) {
+    loop {
+        iface_to_udp(&socket, &iface).await;
+    }
+}
+
+async fn udp_connecter(socket: &UdpSocket, iface: &Iface, rem_address: &String) {
+    socket.connect(&rem_address).await.unwrap();
+    let _ = iface_to_udp_loop(&socket, &iface);
+    let _ = udp_to_iface_loop(&socket, &iface);
+}
+
 pub async fn client() {
     // Read Local & Remote IP from args
     let loc_address = env::args().nth(2).expect("Unable to recognize listen IP");
@@ -43,13 +77,5 @@ pub async fn client() {
     });
 
     // Handshake
-    socket.connect(&rem_address).await.unwrap();
-    loop {
-        let mut buf = vec![0; 1504];
-        let str = String::from("test");
-        let len = socket.send(&str.into_bytes()).await.unwrap();
-        println!("{:?} bytes sent", len);
-        let len = socket.recv(&mut buf).await.unwrap();
-        println!("{:?} bytes received from {:?}", len, rem_address);
-    }
+    udp_connecter(&socket, &iface, &rem_address).await;
 }
