@@ -81,7 +81,8 @@ pub async fn server() {
     let socket_recv = socket.clone();
 
     let mut buf = vec![0; 1500];
-    let (_, addr) = socket.recv_from(&mut buf).await.unwrap();
+    let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
+    println!("recv: {:?}", len);
 
     let writer = tokio::spawn(async move {
         println!("w->0");
