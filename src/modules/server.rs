@@ -1,3 +1,4 @@
+use std::net::SocketAddr;
 use std::process::Command;
 use std::{env, process};
 
@@ -13,6 +14,38 @@ fn cmd(cmd: &str, args: &[&str]) {
         .wait()
         .unwrap();
     assert!(ecode.success(), "Failed to execte {}", cmd);
+}
+
+async fn udp_to_iface(socket: &UdpSocket, iface: &Iface) -> SocketAddr {
+    let mut buf = vec![0; 1500];
+    let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
+    println!("{:?}", String::from_utf8(buf.clone()).unwrap());
+    iface.send(&mut buf[..len]).unwrap();
+    return addr;
+}
+
+async fn udp_to_iface_loop(socket: &UdpSocket, iface: &Iface) {
+    loop {
+        udp_to_iface(&socket, &iface).await;
+    }
+}
+
+async fn iface_to_udp(socket: &UdpSocket, iface: &Iface, addr: &SocketAddr) {
+    let mut buf = vec![0; 1500];
+    let len = iface.recv(&mut buf).unwrap();
+    let _ = socket.send_to(&mut buf[..len], &addr);
+}
+
+async fn iface_to_udp_loop(socket: &UdpSocket, iface: &Iface, addr: &SocketAddr) {
+    loop {
+        iface_to_udp(&socket, &iface, &addr).await;
+    }
+}
+
+async fn udp_accepter(socket: &UdpSocket, iface: &Iface) {
+    let addr = udp_to_iface(&socket, &iface).await;
+    let _ = iface_to_udp_loop(&socket, &iface, &addr);
+    let _ = udp_to_iface_loop(&socket, &iface);
 }
 
 pub async fn server() {
@@ -42,10 +75,7 @@ pub async fn server() {
     });
 
     loop {
-        let mut buf = vec![0; 1504];
-        let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
-        println!("{:?} bytes received from {:?}", len, addr);
-        let len = socket.send_to(&buf[..len], addr).await.unwrap();
-        println!("{:?} bytes sent", len);
+        udp_accepter(&socket, &iface).await;
+        println!("Accepted")
     }
 }
