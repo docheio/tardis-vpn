@@ -70,8 +70,12 @@ pub async fn client() {
     });
     loop {
         let len = iface.recv(&mut buf).unwrap();
-        socket.send(&buf[4..len]).await.unwrap();
+        if len > 4 {
+            socket.send(&buf[4..len]).await.unwrap();
+            println!("send: {:?}", len - 4);
+        }
         let len = socket.recv(&mut buf).await.unwrap();
+        println!("recv: {:?}", len);
         iface.send(&buf[..len]).unwrap();
     }
 }
