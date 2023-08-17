@@ -1,4 +1,3 @@
-use std::net::SocketAddr;
 use std::process::Command;
 use std::{env, process};
 
@@ -16,38 +15,15 @@ fn cmd(cmd: &str, args: &[&str]) {
     assert!(ecode.success(), "Failed to execte {}", cmd);
 }
 
-async fn accept(iface: &Iface, socket: &UdpSocket) -> SocketAddr {
-    let mut buffer = vec![0; 1504];
-    let (len, addr) = socket.recv_from(&mut buffer).await.unwrap();
-    iface.send(&mut buffer[4..len]).unwrap();
-    return addr;
-}
-
-async fn loop_send(rem_address: &str, iface: &Iface, socket: &UdpSocket) {
-    loop {
-        let mut buffer = vec![0; 1504];
-        let len = iface.recv(&mut buffer).unwrap();
-        socket.send_to(&buffer[..len], &rem_address).await.unwrap();
-    }
-}
-
-async fn loop_recv(iface: &Iface, socket: &UdpSocket) {
-    loop {
-        let mut buffer = vec![0; 1504];
-        let (len, _) = socket.recv_from(&mut buffer).await.unwrap();
-        iface.send(&mut buffer[4..len]).unwrap();
-    }
-}
-
 pub async fn server() {
-    // Read Local & Remote IP from args
+    // Read Local IP from args
     let loc_address = env::args().nth(2).expect("Unable to recognize listen IP");
 
     // Create interface
     let name = &env::args()
         .nth(3)
         .expect("Unable to configure the interface name");
-    let tap = Iface::new(&name, Mode::Tap).unwrap_or_else(|err| {
+    let iface = Iface::new(&name, Mode::Tap).unwrap_or_else(|err| {
         eprintln!("Failed to configure the interface: {}", err);
         process::exit(1);
     });
@@ -56,8 +32,8 @@ pub async fn server() {
     let ip = &env::args()
         .nth(4)
         .expect("Unable to recognize remote interface IP");
-    cmd("ip", &["addr", "add", "dev", tap.name(), &ip]);
-    cmd("ip", &["link", "set", "up", "dev", tap.name()]);
+    cmd("ip", &["addr", "add", "dev", iface.name(), &ip]);
+    cmd("ip", &["link", "set", "up", "dev", iface.name()]);
 
     // Create socket
     let socket = UdpSocket::bind(&loc_address).await.unwrap_or_else(|err| {
@@ -65,9 +41,11 @@ pub async fn server() {
         process::exit(1);
     });
 
-    // Handshake
-    let addr = accept(&tap, &socket).await;
-    let _ = loop_send(&addr.to_string(), &tap, &socket);
-    let _ = loop_recv(&tap, &socket);
-    loop {}
+    loop {
+        let mut buf = [0; 1504];
+        let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
+        println!("{:?} bytes received from {:?}", len, addr);
+        let len = socket.send_to(&buf[..len], addr).await.unwrap();
+        println!("{:?} bytes sent", len);
+    }
 }
