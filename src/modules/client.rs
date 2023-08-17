@@ -26,7 +26,8 @@ async fn loop_send(rem_address: &str, iface: &Iface, socket: &UdpSocket) {
 async fn loop_recv(iface: &Iface, socket: &UdpSocket) {
     loop {
         let mut buffer = vec![0; 1504];
-        let (len, _) = socket.recv_from(&mut buffer).await.unwrap();
+        let (len, size) = socket.recv_from(&mut buffer).await.unwrap();
+        println!("res {}", size);
         iface.send(&mut buffer[4..len]).unwrap();
     }
 }
