@@ -17,7 +17,7 @@ use modules::client::client;
 use modules::peer::peer;
 use modules::server::server;
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() {
     let mode = env::args().nth(1).expect("Unable to select mode");
     if mode.eq("peer") {
