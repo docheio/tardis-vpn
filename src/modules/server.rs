@@ -79,7 +79,7 @@ pub async fn server() {
             let mut buf = [0; 1504];
             loop {
                 let (len, _) = socket_reader.recv_from(&mut buf).await.unwrap();
-
+                println!("len: {:?}", len);
                 iface_writer.send(&buf[..len]).unwrap();
             }
         });
