@@ -97,17 +97,17 @@ pub async fn ft_peer(
     let (sender, receiver) = socket.framed(VecCodec(*rem_address)).split();
 
     // Create interface
-    let tap = Iface::new(&name, Mode::Tap).unwrap_or_else(|err| {
+    let iface = Iface::new(&name, Mode::Tap).unwrap_or_else(|err| {
         eprintln!("Failed to configure the interface name: {}", err);
         process::exit(1);
     });
 
     // Configure the „local“ (kernel) endpoint.
-    cmd("ip", &["addr", "add", "dev", tap.name(), &ip]);
-    cmd("ip", &["link", "set", "up", "dev", tap.name()]);
+    cmd("ip", &["addr", "add", "dev", iface.name(), &ip]);
+    cmd("ip", &["link", "set", "up", "dev", iface.name()]);
 
     // Handshake
-    let (sink, stream) = Async::new(tap, &core.handle()).unwrap().split();
+    let (sink, stream) = Async::new(iface, &core.handle()).unwrap().split();
     let reader = stream.forward(sender);
     let writer = receiver.forward(sink);
     core.run(reader.join(writer)).unwrap();
