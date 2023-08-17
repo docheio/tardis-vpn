@@ -18,6 +18,8 @@ use tokio::net::UdpSocket;
 
 use tun_tap::{Iface, Mode};
 
+use super::peer::ft_peer;
+
 fn cmd(cmd: &str, args: &[&str]) {
     let ecode = Command::new(cmd)
         .args(args)
@@ -63,15 +65,11 @@ pub async fn client() {
     cmd("ip", &["link", "set", "up", "dev", iface.name()]);
 
     // Handshake
-    let mut buf = [0; 1504];
+    let buf = [0; 1500];
     socket.connect(&rem_address).await.unwrap_or_else(|err| {
         eprintln!("Unable to connect to server: {}", err);
         process::exit(1);
     });
-    loop {
-        let len = iface.recv(&mut buf).unwrap();
-        socket.send(&buf[4..len]).await.unwrap();
-        let len = socket.recv(&mut buf).await.unwrap();
-        iface.send(&buf[..len]).unwrap();
-    }
+    socket.send(&buf).await.unwrap();
+    ft_peer(&loc_address, &rem_address, &name, &ip).await;
 }

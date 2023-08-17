@@ -83,3 +83,32 @@ pub async fn peer() {
     let writer = receiver.forward(sink);
     core.run(reader.join(writer)).unwrap();
 }
+
+pub async fn ft_peer(
+    loc_address: &SocketAddr,
+    rem_address: &SocketAddr,
+    name: &String,
+    ip: &String,
+) {
+    let mut core = Core::new().unwrap();
+
+    // Create socket
+    let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
+    let (sender, receiver) = socket.framed(VecCodec(*rem_address)).split();
+
+    // Create interface
+    let tap = Iface::new(&name, Mode::Tap).unwrap_or_else(|err| {
+        eprintln!("Failed to configure the interface name: {}", err);
+        process::exit(1);
+    });
+
+    // Configure the „local“ (kernel) endpoint.
+    cmd("ip", &["addr", "add", "dev", tap.name(), &ip]);
+    cmd("ip", &["link", "set", "up", "dev", tap.name()]);
+
+    // Handshake
+    let (sink, stream) = Async::new(tap, &core.handle()).unwrap().split();
+    let reader = stream.forward(sender);
+    let writer = receiver.forward(sink);
+    core.run(reader.join(writer)).unwrap();
+}
