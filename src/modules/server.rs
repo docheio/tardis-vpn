@@ -102,10 +102,6 @@ pub async fn server() {
             }
         }
     });
-    let rt = Runtime::new().unwrap();
-    rt.block_on(async move {
-        tokio::spawn(async { writer.await });
-        tokio::spawn(async { reader.await });
-    });
-    loop {}
+    writer.await;
+    reader.await;
 }
