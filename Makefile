@@ -10,8 +10,7 @@
 #                                                                                                              #
 # ************************************************************************************************************ #
 
-all: 
-	cargo build --release;
+all: update re install
 
 clean:
 	rm -rf ./target/release
@@ -22,7 +21,8 @@ fclean:
 
 re: fclean all
 
-build: all
+build:
+	cargo build --release;
 
 update:
 	git pull;
