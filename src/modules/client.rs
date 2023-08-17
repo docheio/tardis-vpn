@@ -13,7 +13,8 @@
 use std::net::SocketAddr;
 use std::{env, process};
 
-use tokio::net::UdpSocket;
+use tokio_core::net::UdpSocket;
+use tokio_core::reactor::Core;
 
 use super::peer::ft_peer;
 
@@ -35,7 +36,8 @@ pub async fn client() {
     });
 
     // Create socket
-    let socket = UdpSocket::bind(&loc_address).await.unwrap();
+    let core = Core::new().unwrap();
+    let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
 
     // iface
     let name = &env::args().nth(3).expect("Unable to read Interface name");
@@ -47,10 +49,10 @@ pub async fn client() {
 
     // Handshake
     let buf = [0; 1500];
-    socket.connect(&rem_address).await.unwrap_or_else(|err| {
+    socket.connect(&rem_address).unwrap_or_else(|err| {
         eprintln!("Unable to connect to server: {}", err);
         process::exit(1);
     });
-    socket.send(&buf).await.unwrap();
-    ft_peer(&loc_address, &rem_address, &name, &ip).await;
+    socket.send(&buf).unwrap();
+    ft_peer(socket, &rem_address, &name, &ip).await;
 }

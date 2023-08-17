@@ -13,7 +13,8 @@
 use std::net::SocketAddr;
 use std::{env, process};
 
-use tokio::net::UdpSocket;
+use tokio_core::net::UdpSocket;
+use tokio_core::reactor::Core;
 
 use super::peer::ft_peer;
 
@@ -29,7 +30,8 @@ pub async fn server() {
         });
 
     // Create socket
-    let socket = UdpSocket::bind(&loc_address).await.unwrap_or_else(|err| {
+    let core = Core::new().unwrap();
+    let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap_or_else(|err| {
         eprintln!("Unable to bind udp socket: {}", err);
         process::exit(1);
     });
@@ -43,9 +45,7 @@ pub async fn server() {
         .expect("Unable to recognize remote interface IP");
 
     // Handshake
-    loop {
-        let mut buf = [0; 1500];
-        let (_, addr) = socket.recv_from(&mut buf).await.unwrap();
-        ft_peer(&loc_address, &addr, &name, &ip).await;
-    }
+    let mut buf = [0; 1500];
+    let (_, addr) = socket.recv_from(&mut buf).unwrap();
+    ft_peer(socket, &addr, &name, &ip).await;
 }

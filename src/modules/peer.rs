@@ -85,15 +85,15 @@ pub async fn peer() {
 }
 
 pub async fn ft_peer(
-    loc_address: &SocketAddr,
+    socket: UdpSocket,
     rem_address: &SocketAddr,
     name: &String,
-    ip: &String,
+    ip: &String
 ) {
     let mut core = Core::new().unwrap();
 
-    // Create socket
-    let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
+    // Create socket;
+    let socket = UdpSocket::from(socket);
     let (sender, receiver) = socket.framed(VecCodec(*rem_address)).split();
 
     // Create interface
