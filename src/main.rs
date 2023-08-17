@@ -13,18 +13,18 @@
 mod modules;
 use std::env;
 
+use modules::client::client;
 use modules::peer::peer;
 use modules::server::server;
-use modules::client::client;
 
 #[tokio::main]
 async fn main() {
     let mode = env::args().nth(2).expect("Unable to select mode");
-    if mode == "peer" {
+    if mode.eq("peer") {
         peer().await;
-    } else if mode == "server" {
+    } else if mode.eq("server") {
         server().await;
-    } else if mode == "client" {
+    } else if mode.eq("client") {
         client().await;
     } else {
         eprintln!("Unable to select mode");
