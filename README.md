@@ -18,7 +18,7 @@ make re
 make install
 ```
 
-- **Start service**
+- **Start Tardis**
 ```bash
 # Must edit config „/etc/systemd/system/tardisd.service“
 systemctl enable --now tardisd
