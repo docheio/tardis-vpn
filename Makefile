@@ -24,6 +24,9 @@ re: fclean all
 
 build: all
 
+update:
+	git pull;
+
 install:
 	sudo install ./target/release/tardis /usr/local/bin;
 	cp ./service/tardisd.service /etc/systemd/system/;
