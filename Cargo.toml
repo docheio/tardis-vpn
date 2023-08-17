@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 futures = "0.1"
+tokio = { version = "1.31.0", features = ["full"] }
 tokio-core = "0.1.18"
 tun-tap = { path = "./modules/tuntap" }
