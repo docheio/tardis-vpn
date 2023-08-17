@@ -42,7 +42,7 @@ pub async fn server() {
     });
 
     loop {
-        let mut buf = [0; 1504];
+        let mut buf = vec![0; 1504];
         let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
         println!("{:?} bytes received from {:?}", len, addr);
         let len = socket.send_to(&buf[..len], addr).await.unwrap();
