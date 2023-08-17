@@ -56,7 +56,10 @@ pub async fn server() {
     });
 
     // Create socket
-    let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
+    let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap_or_else(|err| {
+        eprintln!("Unable to open socket: {}", err);
+        process::exit(1);
+    });
     println!("ok0");
     let mut buf = vec![0; 10];
     println!("ok1");
