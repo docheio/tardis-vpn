@@ -18,12 +18,19 @@ make re
 make install
 ```
 
-- **Start Tardis**
+- **Tardis command usage**
+```bash
+# Peer mode [peer-to-peer]
+tardis peer <LISTEN-IP>:<PORT> <TARGET-IP>:<PORT> <INTERFACE-NAME> <INTERFACE-IP>/<IP-RANGE>
+
+# Server mode [server-to-client]
+tardis server <LISTEN-IP>:<PORT> <INTERFACE-NAME> <INTERFACE-IP>/<IP-RANGE>
+
+# Client mode [client-to-server]
+tardis client <TARGET-IP>:<PORT> <INTERFACE-NAME> <INTERFACE-IP>/<IP-RANGE>
+```
+- **Start Service**
 ```bash
 # Must edit config „/etc/systemd/system/tardisd.service“
 systemctl enable --now tardisd
-
-# or
-
-tardis peer <LISTEN-IP>:<PORT> <TARGET-IP>:<PORT> <INTERFACE-NAME> <INTERFACE-IP>/<IP-RANGE>
 ```
