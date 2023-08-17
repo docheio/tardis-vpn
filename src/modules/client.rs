@@ -98,5 +98,5 @@ pub async fn client() {
         }
     });
     writer.await.unwrap();
-    reader.await.unwrap();
+    // reader.await.unwrap();
 }

@@ -102,5 +102,5 @@ pub async fn server() {
         }
     });
     writer.await.unwrap();
-    reader.await.unwrap();
+    // reader.await.unwrap();
 }
