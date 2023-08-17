@@ -68,6 +68,7 @@ pub async fn server() {
     loop {
         let addr = accept(&tap, &socket).await;
         let _ = loop_send(&addr.to_string(), &tap, &socket);
+        println!("ok");
         let _ = loop_recv(&tap, &socket);
     }
 }
