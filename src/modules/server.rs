@@ -78,7 +78,8 @@ pub async fn server() {
             let len = stream.read(&mut buf).await.unwrap();
             iface_send.send(&mut buf[..len]).unwrap();
         }
-    });
+    }).await.unwrap();
+    
 
     // let mut buf = [0; 1504];
     // loop {
