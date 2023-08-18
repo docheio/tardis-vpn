@@ -13,9 +13,7 @@ make install
 
 - **Update Tardis**
 ```bash
-make update
-make re
-make install
+make upgrade
 ```
 
 - **Tardis command usage**
