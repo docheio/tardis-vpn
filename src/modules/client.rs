@@ -15,7 +15,7 @@ use std::process::Command;
 use std::sync::Arc;
 use std::{env, process};
 
-use tokio::net::UdpSocket;
+use std::net::UdpSocket;
 
 use tun_tap::{Iface, Mode};
 
@@ -45,7 +45,7 @@ pub async fn client() {
         });
 
     // Create socket
-    let socket = UdpSocket::bind(&loc_address).await.unwrap();
+    let socket = UdpSocket::bind(&loc_address).unwrap();
     let socket = Arc::new(socket);
 
     // Create interface
@@ -70,35 +70,35 @@ pub async fn client() {
     let socket_send = socket.clone();
     let socket_recv = socket.clone();
 
-    socket.connect(&rem_address).await.unwrap();
-    loop {
-        let mut buf = vec![0; 1500];
-        socket.send(&buf[0..0]).await.unwrap();
-        println!("send");
-        let len = socket.recv(&mut buf).await.unwrap();
-        println!("recv size: {:?}", len);
-        let len = socket.recv(&mut buf).await.unwrap();
-        println!("recv size: {:?}", len);
-    }
+    socket.connect(&rem_address).unwrap();
+    // loop {
+    //     let mut buf = vec![0; 1500];
+    //     socket.send(&buf[0..0]).await.unwrap();
+    //     println!("send");
+    //     let len = socket.recv(&mut buf).await.unwrap();
+    //     println!("recv size: {:?}", len);
+    //     let len = socket.recv(&mut buf).await.unwrap();
+    //     println!("recv size: {:?}", len);
+    // }
 
-    // let writer = tokio::spawn(async move {
-    //     loop {
-    //         let mut buf = vec![0; 1500];
-    //         let len = socket_recv.recv(&mut buf).await.unwrap();
-    //         println!("recv: {:?}", len);
-    //         iface_writer.send(&buf[..len]).unwrap();
-    //     }
-    // });
-    // let reader = tokio::spawn(async move {
-    //     loop {
-    //         let mut buf = vec![0; 1504];
-    //         let len = iface_reader.recv(&mut buf).unwrap();
-    //         if len > 0 {
-    //             socket_send.send(&buf[..len]).await.unwrap();
-    //             println!("send: {:?}", len);
-    //         }
-    //     }
-    // });
-    // writer.await.unwrap();
-    // reader.await.unwrap();
+    let writer = tokio::spawn(async move {
+        loop {
+            let mut buf = vec![0; 1500];
+            let len = socket_recv.recv(&mut buf).unwrap();
+            println!("recv: {:?}", len);
+            iface_writer.send(&buf[..len]).unwrap();
+        }
+    });
+    let reader = tokio::spawn(async move {
+        loop {
+            let mut buf = vec![0; 1504];
+            let len = iface_reader.recv(&mut buf).unwrap();
+            if len > 0 {
+                socket_send.send(&buf[..len]).unwrap();
+                println!("send: {:?}", len);
+            }
+        }
+    });
+    writer.await.unwrap();
+    reader.await.unwrap();
 }
