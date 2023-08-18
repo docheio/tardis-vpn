@@ -78,6 +78,7 @@ pub async fn server() {
     // }
 
     let writer = tokio::spawn(async move {
+        println!("w loaded");
         loop {
             let mut buf = vec![0; 1500];
             let len = socket_recv.recv(&mut buf).unwrap();
@@ -86,6 +87,7 @@ pub async fn server() {
         }
     });
     let reader = tokio::spawn(async move {
+        println!("r loaded");
         loop {
             let mut buf = vec![0; 1504];
             let len = iface_reader.recv(&mut buf).unwrap();
