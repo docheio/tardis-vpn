@@ -72,15 +72,6 @@ pub async fn client() {
     socket.connect(&rem_address).unwrap();
     let buf = vec![0; 1500];
     socket.send(&buf[0..0]).unwrap();
-    // loop {
-    //     let mut buf = vec![0; 1500];
-    //     socket.send(&buf[0..0]).await.unwrap();
-    //     println!("send");
-    //     let len = socket.recv(&mut buf).await.unwrap();
-    //     println!("recv size: {:?}", len);
-    //     let len = socket.recv(&mut buf).await.unwrap();
-    //     println!("recv size: {:?}", len);
-    // }
 
     let writer = thread::spawn(move || {
         println!("w loaded");
@@ -105,5 +96,4 @@ pub async fn client() {
     });
     writer.join().unwrap();
     reader.join().unwrap();
-    loop{}
 }
