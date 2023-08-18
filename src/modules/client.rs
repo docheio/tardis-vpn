@@ -70,8 +70,8 @@ pub async fn client() {
     let socket_recv = socket.clone();
 
     socket.connect(&rem_address).unwrap();
-    let buf = vec![0; 1500];
-    socket.send(&buf[0..0]).unwrap();
+    let buf = vec![0; 1];
+    socket.send(&buf).unwrap();
 
     let writer = thread::spawn(move || {
         println!("w loaded");

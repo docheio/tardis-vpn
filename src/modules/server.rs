@@ -65,7 +65,7 @@ pub async fn server() {
     let socket_send = socket.clone();
     let socket_recv = socket.clone();
 
-    let mut buf = vec![0; 1500];
+    let mut buf = vec![0; 1];
     let (_, addr) = socket.recv_from(&mut buf).unwrap();
 
     let writer = thread::spawn(move || {
