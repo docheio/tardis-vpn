@@ -79,36 +79,4 @@ pub async fn client() {
         iface.send(&buf[..len]).unwrap();
     }
 
-    // let iface = Arc::new(iface);
-    // let iface_writer = Arc::clone(&iface);
-    // let iface_reader = Arc::clone(&iface);
-    // let socket = Arc::new(socket);
-    // let socket_recv = socket.clone();
-    // let socket_send = socket.clone();
-
-    // let mut buf = vec![0; 1500];
-    // socket.send(&mut buf).await.unwrap();
-
-    // let writer = tokio::spawn(async move {
-    //     loop {
-    //         let mut buf = vec![0; 1500];
-    //         let len = socket_recv.recv(&mut buf).await.unwrap();
-    //         if len > 0 {
-    //             println!("recv: {:?}", len);
-    //             iface_writer.send(&buf[..len]).unwrap();
-    //         }
-    //     }
-    // });
-    // let reader = tokio::spawn(async move {
-    //     loop {
-    //         let mut buf = vec![0; 1504];
-    //         let len = iface_reader.recv(&mut buf).unwrap();
-    //         if len > 0 {
-    //             socket_send.send(&buf[..len]).await.unwrap();
-    //             println!("send: {:?}", len);
-    //         }
-    //     }
-    // });
-    // writer.await.unwrap();
-    // reader.await.unwrap();
 }

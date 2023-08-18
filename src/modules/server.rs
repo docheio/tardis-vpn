@@ -12,9 +12,12 @@
 
 use std::net::SocketAddr;
 use std::process::Command;
+use std::sync::Arc;
 use std::{env, process};
 
-use tokio::net::UdpSocket;
+use tokio::io::{AsyncWriteExt, AsyncReadExt};
+// use tokio::net::UdpSocket;
+use udp_stream::UdpListener;
 
 use tun_tap::{Iface, Mode};
 
@@ -40,10 +43,11 @@ pub async fn server() {
         });
 
     // Create socket
-    let socket = UdpSocket::bind(&loc_address).await.unwrap_or_else(|err| {
-        eprintln!("Unable to bind udp socket: {}", err);
-        process::exit(1);
-    });
+    // let socket = UdpSocket::bind(&loc_address).await.unwrap_or_else(|err| {
+    //     eprintln!("Unable to bind udp socket: {}", err);
+    //     process::exit(1);
+    // });
+    let listener = UdpListener::bind(loc_address).await.unwrap();
 
     // Create interface
     let name = &env::args().nth(3).expect("Unable to read Interface name");
@@ -60,46 +64,31 @@ pub async fn server() {
     cmd("ip", &["link", "set", "up", "dev", iface.name()]);
 
     // Handshake
-    let mut buf = [0; 1504];
-    loop {
-        let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
-        println!("recv: {:?}", len);
-        iface.send(&buf[..len]).unwrap();
-        let len = iface.recv(&mut buf).unwrap();
-        if len > 0 {
-            socket.send_to(&buf[..len], addr).await.unwrap();
-            println!("send: {:?}", len);
+
+    let (mut stream, _) = listener.accept().await.unwrap();
+    let iface = Arc::new(iface);
+    let iface_recv = iface.clone();
+    let iface_send = iface.clone();
+
+    tokio::spawn(async move {
+        let mut buf = vec![0; 1504];
+        loop {
+            let len = iface_recv.recv(&mut buf).unwrap();
+            stream.write(&buf[..len]).await.unwrap();
+            let len = stream.read(&mut buf).await.unwrap();
+            iface_send.send(&mut buf[..len]).unwrap();
         }
-    }
+    });
 
-    // let iface = Arc::new(iface);
-    // let iface_writer = Arc::clone(&iface);
-    // let iface_reader = Arc::clone(&iface);
-    // let socket = Arc::new(socket);
-    // let socket_recv = socket.clone();
-    // let socket_send = socket.clone();
-
-    // let mut buf = vec![0; 1500];
-    // let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
-    // println!("recv: {:?}", len);
-
-    // let writer = tokio::spawn(async move {
-    //     loop {
-    //         let mut buf = vec![0; 1500];
-    //         let (len, _) = socket_recv.recv_from(&mut buf).await.unwrap();
-    //         iface_writer.send(&buf[..len]).unwrap();
+    // let mut buf = [0; 1504];
+    // loop {
+    //     let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
+    //     println!("recv: {:?}", len);
+    //     iface.send(&buf[..len]).unwrap();
+    //     let len = iface.recv(&mut buf).unwrap();
+    //     if len > 0 {
+    //         socket.send_to(&buf[..len], addr).await.unwrap();
+    //         println!("send: {:?}", len);
     //     }
-    // });
-    // let reader = tokio::spawn(async move {
-    //     loop {
-    //         let mut buf = vec![0; 1500];
-    //         let len = iface_reader.recv(&mut buf).unwrap();
-    //         if len > 0 {
-    //             socket_send.send_to(&buf[..len], addr).await.unwrap();
-    //             println!("send: {:?}", len);
-    //         }
-    //     }
-    // });
-    // writer.await.unwrap();
-    // reader.await.unwrap();
+    // }
 }
