@@ -13,6 +13,7 @@
 use std::net::SocketAddr;
 use std::process::Command;
 use std::sync::Arc;
+use std::time::Duration;
 use std::{env, process, thread};
 
 use std::net::UdpSocket;
@@ -66,6 +67,7 @@ pub async fn client() {
     let iface = Arc::new(iface);
     let iface_writer = Arc::clone(&iface);
     let iface_reader = Arc::clone(&iface);
+    let socket_keep = socket.clone();
     let socket_send = socket.clone();
     let socket_recv = socket.clone();
 
@@ -73,6 +75,10 @@ pub async fn client() {
     let buf = vec![0; 1];
     socket.send(&buf).unwrap();
 
+    let keeper = thread::spawn(move || loop {
+        thread::sleep(Duration::from_secs(4));
+        socket_keep.send(&[]).unwrap();
+    });
     let writer = thread::spawn(move || {
         println!("w loaded");
         loop {
@@ -89,12 +95,13 @@ pub async fn client() {
             let len = iface_reader.recv(&mut buf).unwrap();
             println!("{:?}", buf);
             println!("if recv");
-            if len > 0 {
+            if len > 18 {
                 socket_send.send(&buf[..len]).unwrap();
                 println!("send: {:?}", len);
             }
         }
     });
+    keeper.join().unwrap();
     writer.join().unwrap();
     reader.join().unwrap();
 }
