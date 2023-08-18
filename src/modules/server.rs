@@ -77,7 +77,6 @@ pub async fn server() {
             iface_writer.send(&buf[..len]).unwrap();
         }
     });
-    
     let reader = thread::spawn(move || {
         println!("r loaded");
         loop {
