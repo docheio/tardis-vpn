@@ -23,7 +23,7 @@ async fn main() {
     if mode.eq("peer") {
         peer().await;
     } else if mode.eq("server") {
-        server().await.unwrap();
+        server().await;
     } else if mode.eq("client") {
         client().await;
     } else {

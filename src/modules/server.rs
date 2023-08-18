@@ -1,83 +1,106 @@
 /* ********************************************************************************************************** */
 /*                                                                                                            */
 /*                                                     :::::::::  ::::::::   ::::::::   :::    ::: :::::::::: */
-/* server.rs                                          :+:    :+: :+:    :+: :+:    :+: :+:    :+: :+:         */
+/* peer.rs                                            :+:    :+: :+:    :+: :+:    :+: :+:    :+: :+:         */
 /*                                                   +:+    +:+ +:+    +:+ +:+        +:+    +:+ +:+          */
 /* By: se-yukun <yukun@doche.io>                    +#+    +:+ +#+    +:+ +#+        +#++:++#++ +#++:++#      */
 /*                                                 +#+    +#+ +#+    +#+ +#+        +#+    +#+ +#+            */
-/* Created: 2023/08/18 02:58:57 by se-yukun       #+#    #+# #+#    #+# #+#    #+# #+#    #+# #+#             */
-/* Updated: 2023/08/18 02:58:58 by se-yukun      #########  ########   ########  ###    ### ##########.io.    */
+/* Created: 2023/08/18 02:58:51 by se-yukun       #+#    #+# #+#    #+# #+#    #+# #+#    #+# #+#             */
+/* Updated: 2023/08/18 02:58:54 by se-yukun      #########  ########   ########  ###    ### ##########.io.    */
 /*                                                                                                            */
 /* ********************************************************************************************************** */
 
+use std::io::Result;
 use std::net::SocketAddr;
 use std::process::Command;
 use std::sync::Arc;
-use std::env;
+use std::{env, process};
 
-use anyhow::Ok;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-// use tokio::net::UdpSocket;
-use udp_stream::UdpListener;
+use tokio_core::net::{UdpCodec, UdpSocket};
+use tokio_core::reactor::Core;
 
 use tun_tap::{Iface, Mode};
 
-fn cmd(cmd: &str, args: &[&str]) -> anyhow::Result<()> {
-    let ecode = Command::new(cmd).args(args).spawn()?.wait()?;
-    assert!(ecode.success(), "Failed to execte {}", cmd);
-    Ok(())
+struct VecCodec(SocketAddr);
+
+impl UdpCodec for VecCodec {
+    type In = Vec<u8>;
+    type Out = Vec<u8>;
+    fn decode(&mut self, _src: &SocketAddr, buf: &[u8]) -> Result<Self::In> {
+        Ok(buf.to_owned())
+    }
+    fn encode(&mut self, msg: Self::Out, buf: &mut Vec<u8>) -> SocketAddr {
+        buf.extend(&msg);
+        self.0
+    }
 }
 
-pub async fn server() -> anyhow::Result<()> {
+fn cmd(cmd: &str, args: &[&str]) {
+    let ecode = Command::new(cmd)
+        .args(args)
+        .spawn()
+        .unwrap()
+        .wait()
+        .unwrap();
+    assert!(ecode.success(), "Failed to execte {}", cmd);
+}
+
+pub async fn server() {
+    let core = Core::new().unwrap();
+
     // Read Local & Remote IP from args
-    let loc_address = env::args().nth(2).unwrap().parse::<SocketAddr>()?;
+    let loc_address = env::args().nth(2).unwrap().parse().unwrap_or_else(|err| {
+        eprintln!("Unable to recognize listen ip: {}", err);
+        process::exit(1);
+    });
 
     // Create socket
-    // let socket = UdpSocket::bind(&loc_address).await.unwrap_or_else(|err| {
-    //     eprintln!("Unable to bind udp socket: {}", err);
-    //     process::exit(1);
-    // });
-    let listener = UdpListener::bind(loc_address).await?;
+    let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
+    let socket = Arc::new(socket);
 
     // Create interface
-    let name = &env::args().nth(3).unwrap();
-    let iface = Iface::new(&name, Mode::Tap)?;
+    let name = &env::args().nth(3).expect("Unable to read Interface name");
+    let iface = Iface::new(&name, Mode::Tap).unwrap_or_else(|err| {
+        eprintln!("Failed to configure the interface name: {}", err);
+        process::exit(1);
+    });
+    let iface = Arc::new(iface);
 
     // Configure the „local“ (kernel) endpoint.
     let ip = &env::args()
         .nth(4)
         .expect("Unable to recognize remote interface IP");
-    cmd("ip", &["addr", "add", "dev", iface.name(), &ip])?;
-    cmd("ip", &["link", "set", "up", "dev", iface.name()])?;
+    cmd("ip", &["addr", "add", "dev", iface.name(), &ip]);
+    cmd("ip", &["link", "set", "up", "dev", iface.name()]);
 
-    // Handshake
-
-    let (mut stream, _) = listener.accept().await?;
     let iface = Arc::new(iface);
-    let iface_recv = iface.clone();
-    let iface_send = iface.clone();
+    let iface_writer = Arc::clone(&iface);
+    let iface_reader = Arc::clone(&iface);
+    let socket = Arc::new(socket);
+    let socket_send = socket.clone();
+    let socket_recv = socket.clone();
 
-    tokio::spawn(async move {
-        let mut buf = vec![0; 1504];
+    let mut buf = vec![0; 1500];
+    let (_, addr) = socket.recv_from(&mut buf).unwrap();
+
+    let writer = tokio::spawn(async move {
         loop {
-            let len = iface_recv.recv(&mut buf).unwrap();
-            stream.write(&buf[..len]).await.unwrap();
-            let len = stream.read(&mut buf).await.unwrap();
-            iface_send.send(&mut buf[..len]).unwrap();
+            let mut buf = vec![0; 1500];
+            let (len, _) = socket_recv.recv_from(&mut buf).unwrap();
+            println!("recv: {:?}", len);
+            iface_writer.send(&buf[..len]).unwrap();
         }
-    })
-    .await?;
-    Ok(())
-
-    // let mut buf = [0; 1504];
-    // loop {d
-    //     let (len, addr) = socket.recv_from(&mut buf).await?;
-    //     println!("recv: {:?}", len);
-    //     iface.send(&buf[..len])?;
-    //     let len = iface.recv(&mut buf)?;
-    //     if len > 0 {
-    //         socket.send_to(&buf[..len], addr).await?;
-    //         println!("send: {:?}", len);
-    //     }
-    // }
+    });
+    let reader = tokio::spawn(async move {
+        loop {
+            let mut buf = vec![0; 1504];
+            let len = iface_reader.recv(&mut buf).unwrap();
+            if len > 0 {
+                socket_send.send_to(&buf[..len], &addr).unwrap();
+                println!("send: {:?}", len);
+            }
+        }
+    });
+    writer.await.unwrap();
+    reader.await.unwrap();
 }
