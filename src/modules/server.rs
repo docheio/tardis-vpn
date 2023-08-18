@@ -60,37 +60,38 @@ pub async fn server() {
     cmd("ip", &["link", "set", "up", "dev", iface.name()]);
 
     let iface = Arc::new(iface);
-    let iface_writer = Arc::clone(&iface);
-    let iface_reader = Arc::clone(&iface);
+    // let iface_writer = Arc::clone(&iface);
+    // let iface_reader = Arc::clone(&iface);
     let socket = Arc::new(socket);
-    let socket_send = socket.clone();
-    let socket_recv = socket.clone();
+    // let socket_send = socket.clone();
+    // let socket_recv = socket.clone();
 
-    let mut buf = vec![0; 1500];
-    let (_, addr) = socket.recv_from(&mut buf).await.unwrap();
+    // let mut buf = vec![0; 1500];
+    // let (_, addr) = socket.recv_from(&mut buf).await.unwrap();
+    loop {
+        let mut buf = vec![0; 1500];
+        let (len, addr) = socket.recv_from(&mut buf).await.unwrap();
+        println!("addr: {:?}, size: {:?}", addr, len);
+    }
 
-    let writer = tokio::spawn(async move {
-        println!("loaded");
-        loop {
-            println!("w -> 0");
-            let mut buf = vec![0; 1500];
-            println!("w -> 1");
-            let len = socket_recv.recv(&mut buf).await.unwrap();
-            println!("recv: {:?}", len);
-            iface_writer.send(&buf[..len]).unwrap();
-            println!("w -> 2");
-        }
-    });
-    let reader = tokio::spawn(async move {
-        loop {
-            let mut buf = vec![0; 1504];
-            let len = iface_reader.recv(&mut buf).unwrap();
-            if len > 0 {
-                socket_send.send_to(&buf[..len], &addr).await.unwrap();
-                println!("send: {:?}", len);
-            }
-        }
-    });
-    writer.await.unwrap();
-    reader.await.unwrap();
+    // let writer = tokio::spawn(async move {
+    //     println!("loaded");
+    //     loop {
+    //         let mut buf = vec![0; 1500];
+    //         let len = socket_recv.recv(&mut buf).await.unwrap();
+    //         iface_writer.send(&buf[..len]).unwrap();
+    //     }
+    // });
+    // let reader = tokio::spawn(async move {
+    //     loop {
+    //         let mut buf = vec![0; 1504];
+    //         let len = iface_reader.recv(&mut buf).unwrap();
+    //         if len > 0 {
+    //             socket_send.send_to(&buf[..len], &addr).await.unwrap();
+    //             println!("send: {:?}", len);
+    //         }
+    //     }
+    // });
+    // writer.await.unwrap();
+    // reader.await.unwrap();
 }

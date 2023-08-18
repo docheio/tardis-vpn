@@ -70,28 +70,31 @@ pub async fn client() {
     let socket_send = socket.clone();
     let socket_recv = socket.clone();
 
-    let buf = vec![0; 1500];
     socket.connect(&rem_address).await.unwrap();
-    socket.send(&buf).await.unwrap();
+    loop {
+        let buf = vec![0; 1500];
+        socket.send(&buf).await.unwrap();
+        println!("send")
+    }
 
-    let writer = tokio::spawn(async move {
-        loop {
-            let mut buf = vec![0; 1500];
-            let len = socket_recv.recv(&mut buf).await.unwrap();
-            println!("recv: {:?}", len);
-            iface_writer.send(&buf[..len]).unwrap();
-        }
-    });
-    let reader = tokio::spawn(async move {
-        loop {
-            let mut buf = vec![0; 1504];
-            let len = iface_reader.recv(&mut buf).unwrap();
-            if len > 0 {
-                socket_send.send(&buf[..len]).await.unwrap();
-                println!("send: {:?}", len);
-            }
-        }
-    });
-    writer.await.unwrap();
-    reader.await.unwrap();
+    // let writer = tokio::spawn(async move {
+    //     loop {
+    //         let mut buf = vec![0; 1500];
+    //         let len = socket_recv.recv(&mut buf).await.unwrap();
+    //         println!("recv: {:?}", len);
+    //         iface_writer.send(&buf[..len]).unwrap();
+    //     }
+    // });
+    // let reader = tokio::spawn(async move {
+    //     loop {
+    //         let mut buf = vec![0; 1504];
+    //         let len = iface_reader.recv(&mut buf).unwrap();
+    //         if len > 0 {
+    //             socket_send.send(&buf[..len]).await.unwrap();
+    //             println!("send: {:?}", len);
+    //         }
+    //     }
+    // });
+    // writer.await.unwrap();
+    // reader.await.unwrap();
 }
