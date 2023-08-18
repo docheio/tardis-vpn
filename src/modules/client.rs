@@ -85,11 +85,11 @@ pub async fn client() {
     let reader = thread::spawn(move || {
         println!("r loaded");
         loop {
-            let mut buf = vec![0; 1504];
+            let mut buf = vec![0; 1500];
             let len = iface_reader.recv(&mut buf).unwrap();
             println!("if recv");
             if len > 4 {
-                socket_send.send(&buf[4..len]).unwrap();
+                socket_send.send(&buf[..len]).unwrap();
                 println!("send: {:?}", len);
             }
         }
