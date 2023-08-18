@@ -13,7 +13,7 @@
 use std::net::SocketAddr;
 use std::process::Command;
 use std::sync::Arc;
-use std::{env, process};
+use std::{env, process, thread};
 
 use std::net::UdpSocket;
 
@@ -77,7 +77,7 @@ pub async fn server() {
     //     println!("send size {:?}", len);
     // }
 
-    let writer = tokio::spawn(async move {
+    let writer = thread::spawn(move || {
         println!("w loaded");
         loop {
             let mut buf = vec![0; 1500];
@@ -86,7 +86,7 @@ pub async fn server() {
             iface_writer.send(&buf[..len]).unwrap();
         }
     });
-    let reader = tokio::spawn(async move {
+    let reader = thread::spawn(move || {
         println!("r loaded");
         loop {
             let mut buf = vec![0; 1504];
@@ -98,6 +98,7 @@ pub async fn server() {
             }
         }
     });
-    writer.await.unwrap();
-    reader.await.unwrap();
+    writer.join().unwrap();
+    reader.join().unwrap();
+    loop{}
 }
