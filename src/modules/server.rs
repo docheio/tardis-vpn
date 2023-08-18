@@ -61,54 +61,55 @@ pub async fn server() {
     cmd("ip", &["link", "set", "up", "dev", iface.name()]);
 
     let iface = Arc::new(iface);
-    let iface_writer = Arc::clone(&iface);
-    let iface_reader = Arc::clone(&iface);
-    let socket_send = socket.clone();
-    let socket_recv = socket.clone();
+    loop {
+        let iface_writer = Arc::clone(&iface);
+        let iface_reader = Arc::clone(&iface);
+        let socket_send = socket.clone();
+        let socket_recv = socket.clone();
+        let mut buf = vec![0; 1];
+        let (_, addr) = socket.recv_from(&mut buf).unwrap();
 
-    let mut buf = vec![0; 1];
-    let (_, addr) = socket.recv_from(&mut buf).unwrap();
-
-    socket_recv
-        .set_read_timeout(Some(Duration::from_secs(5)))
-        .expect("set_read_timeout call failed");
-    let writer = thread::spawn(move || {
-        println!("w loaded");
-        loop {
-            let mut buf = vec![0; 1518];
-            let len = match socket_recv.recv(&mut buf) {
-                Ok(len) => len,
-                Err(_) => {
-                    break;
-                }
-            };
-            println!("recv: {:?}", len);
-            if len > 0 {
-                iface_writer.send(&buf[..len]).unwrap();
-            }
-        }
-        println!("w end");
-    });
-    let reader = thread::spawn(move || {
-        println!("r loaded");
-        loop {
-            if writer.is_finished() {
-                break;
-            }
-            let mut buf = vec![0; 1518];
-            let len = iface_reader.recv(&mut buf).unwrap();
-            println!("if recv");
-            if len > 0 {
-                match socket_send.send_to(&buf[..len], &addr) {
-                    Ok(_) => {}
+        socket_recv
+            .set_read_timeout(Some(Duration::from_secs(5)))
+            .expect("set_read_timeout call failed");
+        let writer = thread::spawn(move || {
+            println!("w loaded");
+            loop {
+                let mut buf = vec![0; 1518];
+                let len = match socket_recv.recv(&mut buf) {
+                    Ok(len) => len,
                     Err(_) => {
                         break;
                     }
                 };
-                println!("send: {:?}", len);
+                println!("recv: {:?}", len);
+                if len > 0 {
+                    iface_writer.send(&buf[..len]).unwrap();
+                }
             }
-        }
-        println!("r end");
-    });
-    reader.join().unwrap();
+            println!("w end");
+        });
+        let reader = thread::spawn(move || {
+            println!("r loaded");
+            loop {
+                if writer.is_finished() {
+                    break;
+                }
+                let mut buf = vec![0; 1518];
+                let len = iface_reader.recv(&mut buf).unwrap();
+                println!("if recv");
+                if len > 0 {
+                    match socket_send.send_to(&buf[..len], &addr) {
+                        Ok(_) => {}
+                        Err(_) => {
+                            break;
+                        }
+                    };
+                    println!("send: {:?}", len);
+                }
+            }
+            println!("r end");
+        });
+        reader.join().unwrap();
+    }
 }
