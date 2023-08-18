@@ -92,6 +92,9 @@ pub async fn server() {
     let reader = thread::spawn(move || {
         println!("r loaded");
         loop {
+            if writer.is_finished() {
+                break;
+            }
             let mut buf = vec![0; 1518];
             let len = iface_reader.recv(&mut buf).unwrap();
             println!("if recv");
@@ -105,7 +108,7 @@ pub async fn server() {
                 println!("send: {:?}", len);
             }
         }
+        println!("r end");
     });
-    writer.join().unwrap();
     reader.join().unwrap();
 }
