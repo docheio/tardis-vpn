@@ -10,30 +10,14 @@
 /*                                                                                                            */
 /* ********************************************************************************************************** */
 
-use std::io::Result;
 use std::net::SocketAddr;
 use std::process::Command;
 use std::sync::Arc;
 use std::{env, process};
 
-use tokio_core::net::{UdpCodec, UdpSocket};
-use tokio_core::reactor::Core;
+use tokio::net::UdpSocket;
 
 use tun_tap::{Iface, Mode};
-
-struct VecCodec(SocketAddr);
-
-impl UdpCodec for VecCodec {
-    type In = Vec<u8>;
-    type Out = Vec<u8>;
-    fn decode(&mut self, _src: &SocketAddr, buf: &[u8]) -> Result<Self::In> {
-        Ok(buf.to_owned())
-    }
-    fn encode(&mut self, msg: Self::Out, buf: &mut Vec<u8>) -> SocketAddr {
-        buf.extend(&msg);
-        self.0
-    }
-}
 
 fn cmd(cmd: &str, args: &[&str]) {
     let ecode = Command::new(cmd)
@@ -46,8 +30,6 @@ fn cmd(cmd: &str, args: &[&str]) {
 }
 
 pub async fn client() {
-    let core = Core::new().unwrap();
-
     // Read Local & Remote IP from args
     let loc_address = "0.0.0.0:0".parse::<SocketAddr>().unwrap_or_else(|err| {
         eprintln!("Unable to bind udp socket: {}", err);
@@ -63,7 +45,7 @@ pub async fn client() {
         });
 
     // Create socket
-    let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
+    let socket = UdpSocket::bind(&loc_address).await.unwrap();
     let socket = Arc::new(socket);
 
     // Create interface
@@ -89,13 +71,13 @@ pub async fn client() {
     let socket_recv = socket.clone();
 
     let buf = vec![0; 1500];
-    socket.connect(&rem_address).unwrap();
-    socket.send(&buf).unwrap();
+    socket.connect(&rem_address).await.unwrap();
+    socket.send(&buf).await.unwrap();
 
     let writer = tokio::spawn(async move {
         loop {
             let mut buf = vec![0; 1500];
-            let len = socket_recv.recv(&mut buf).unwrap();
+            let len = socket_recv.recv(&mut buf).await.unwrap();
             println!("recv: {:?}", len);
             iface_writer.send(&buf[..len]).unwrap();
         }
@@ -105,7 +87,7 @@ pub async fn client() {
             let mut buf = vec![0; 1504];
             let len = iface_reader.recv(&mut buf).unwrap();
             if len > 0 {
-                socket_send.send(&buf[..len]).unwrap();
+                socket_send.send(&buf[..len]).await.unwrap();
                 println!("send: {:?}", len);
             }
         }
