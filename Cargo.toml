@@ -9,6 +9,6 @@ edition = "2021"
 futures = "0.1"
 tokio = { version = "1.31.0", features = ["full"] }
 tokio-core = "0.1.18"
+anyhow = "1.0"
 tun-tap = { path = "./modules/tuntap" }
 udp-stream = { path = "./modules/udp-stream"}
-
