@@ -93,7 +93,6 @@ pub async fn client() {
         loop {
             let mut buf = vec![0; 1518];
             let len = iface_reader.recv(&mut buf).unwrap();
-            println!("{:?}", buf);
             println!("if recv");
             if len > 18 {
                 socket_send.send(&buf[..len]).unwrap();
