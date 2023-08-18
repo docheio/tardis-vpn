@@ -66,7 +66,6 @@ pub async fn client() {
     let iface = Arc::new(iface);
     let iface_writer = Arc::clone(&iface);
     let iface_reader = Arc::clone(&iface);
-    let socket = Arc::new(socket);
     let socket_send = socket.clone();
     let socket_recv = socket.clone();
 
