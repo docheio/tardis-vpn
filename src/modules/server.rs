@@ -78,7 +78,7 @@ pub async fn server() {
         let writer = thread::spawn(move || {
             println!("w loaded");
             loop {
-                let mut buf = vec![0; 1518];
+                let mut buf = vec![0; 1600];
                 let len = match socket_recv.recv(&mut buf) {
                     Ok(len) => len,
                     Err(_) => {
@@ -96,7 +96,7 @@ pub async fn server() {
             println!("r loaded");
             iface_reader.set_non_blocking().unwrap();
             loop {
-                let mut buf = vec![0; 1518];
+                let mut buf = vec![0; 1600];
                 if writer.is_finished() {
                     break;
                 }
