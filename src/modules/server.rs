@@ -94,7 +94,7 @@ pub async fn server() {
         });
         let reader = thread::spawn(move || {
             println!("r loaded");
-            iface_reader.set_non_blocking().unwrap();
+            // iface_reader.set_non_blocking().unwrap();
             loop {
                 let mut buf = vec![0; 1600];
                 if writer.is_finished() {
