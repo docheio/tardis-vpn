@@ -76,15 +76,15 @@ pub async fn server() {
         println!("w loaded");
         loop {
             let mut buf = vec![0; 1518];
-            let len = socket_recv.recv(&mut buf).unwrap();
+            let len = match socket_recv.recv(&mut buf) {
+                Ok(len) => len,
+                Err(_) => {
+                    break;
+                }
+            };
             println!("recv: {:?}", len);
             if len > 0 {
-                match iface_writer.send(&buf[..len]) {
-                    Ok(_) => {}
-                    Err(_) => {
-                        break;
-                    }
-                };
+                iface_writer.send(&buf[..len]).unwrap();
             }
         }
     });
