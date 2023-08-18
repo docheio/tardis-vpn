@@ -73,9 +73,9 @@ pub async fn client() {
     socket.connect(&rem_address).await.unwrap();
     loop {
         let mut buf = vec![0; 1500];
-        socket.send(&buf).await.unwrap();
+        socket.send(&buf[0..0]).await.unwrap();
         println!("send");
-        let len = socket.recv(&mut buf[0..0]).await.unwrap();
+        let len = socket.recv(&mut buf).await.unwrap();
         println!("recv size: {:?}", len);
         let len = socket.recv(&mut buf).await.unwrap();
         println!("recv size: {:?}", len);
