@@ -71,7 +71,7 @@ pub async fn server() {
     let writer = thread::spawn(move || {
         println!("w loaded");
         loop {
-            let mut buf = vec![0; 1500];
+            let mut buf = vec![0; 1547];
             let len = socket_recv.recv(&mut buf).unwrap();
             println!("recv: {:?}", len);
             iface_writer.send(&buf[..len]).unwrap();
@@ -81,7 +81,7 @@ pub async fn server() {
     let reader = thread::spawn(move || {
         println!("r loaded");
         loop {
-            let mut buf = vec![0; 1500];
+            let mut buf = vec![0; 1547];
             let len = iface_reader.recv(&mut buf).unwrap();
             println!("if recv");
             if len > 4 {
