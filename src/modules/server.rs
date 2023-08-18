@@ -67,6 +67,9 @@ pub async fn server() {
         let socket_send = socket.clone();
         let socket_recv = socket.clone();
         let mut buf = vec![0; 1];
+        socket_recv
+            .set_read_timeout(None)
+            .expect("set_read_timeout call failed");
         let (_, addr) = socket.recv_from(&mut buf).unwrap();
 
         socket_recv
