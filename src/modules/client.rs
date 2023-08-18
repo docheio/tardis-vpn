@@ -78,6 +78,7 @@ pub async fn client() {
     let keeper = thread::spawn(move || loop {
         thread::sleep(Duration::from_secs(4));
         socket_keep.send(&[]).unwrap();
+        println!("keep");
     });
     let writer = thread::spawn(move || {
         println!("w loaded");
