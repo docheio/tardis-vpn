@@ -10,8 +10,7 @@
 #                                                                                                              #
 # ************************************************************************************************************ #
 
-all: 
-	cargo build --release;
+all: update re install
 
 clean:
 	rm -rf ./target/release
@@ -20,9 +19,15 @@ fclean:
 	rm -rf ./target;
 	rm -rf ./Cargo.lock;
 
-re: fclean all
+re: fclean build
 
-build: all
+build:
+	cargo build --release;
+
+update:
+	git pull;
+
+upgrade: update build install
 
 install:
 	sudo install ./target/release/tardis /usr/local/bin;
