@@ -10,6 +10,7 @@
 /*                                                                                                            */
 /* ********************************************************************************************************** */
 
+use std::f32::consts::E;
 use std::net::SocketAddr;
 use std::process::Command;
 use std::sync::Arc;
@@ -108,7 +109,10 @@ pub async fn client() {
             if writer.is_finished() {
                 break;
             }
-            let len = iface_reader.recv(&mut buf).unwrap();
+            let len = match iface_reader.recv(&mut buf) {
+                Ok(len) => len,
+                Err(_) => continue,
+            };
             if len > 0 {
                 socket_send.send(&buf[..len]).unwrap();
                 println!("send: {:?}", len);

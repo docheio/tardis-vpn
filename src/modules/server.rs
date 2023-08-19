@@ -95,9 +95,7 @@ pub async fn server() {
                 }
                 let len = match iface_reader.recv(&mut buf) {
                     Ok(len) => len,
-                    Err(_) => {
-                        continue;
-                    }
+                    Err(_) => continue,
                 };
                 println!("if recv");
                 if len > 0 {
