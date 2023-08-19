@@ -17,7 +17,7 @@ use std::time::Duration;
 use std::{env, process, thread};
 use tokio;
 
-use std::net::UdpSocket;
+use tokio::net::UdpSocket;
 
 use tun_tap::{Iface, Mode};
 
@@ -47,7 +47,7 @@ pub async fn client() {
         });
 
     // Create socket
-    let socket = UdpSocket::bind(&loc_address).unwrap();
+    let socket = UdpSocket::bind(&loc_address).await.unwrap();
     let socket = Arc::new(socket);
 
     // Create interface
@@ -72,15 +72,15 @@ pub async fn client() {
     let socket_send = socket.clone();
     let socket_recv = socket.clone();
 
-    socket.connect(&rem_address).unwrap();
+    socket.connect(&rem_address).await.unwrap();
     let buf = vec![0; 1];
-    socket.send(&buf).unwrap();
+    socket.send(&buf).await.unwrap();
 
     let keeper = tokio::task::spawn(async move {
         println!("k loaded");
         loop {
             let buf = vec![0; 0];
-            match socket_keep.send(&buf) {
+            match socket_keep.send(&buf).await {
                 Ok(_) => {}
                 Err(_) => break,
             };
@@ -96,7 +96,7 @@ pub async fn client() {
             if keeper.is_finished() {
                 break;
             }
-            let len = socket_recv.recv(&mut buf).unwrap();
+            let len = socket_recv.recv(&mut buf).await.unwrap();
             iface_writer.send(&buf[..len]).unwrap();
             println!("recv: {:?}", len);
         }
@@ -111,7 +111,7 @@ pub async fn client() {
                 Err(_) => continue,
             };
             if len > 0 {
-                socket_send.send(&buf[..len]).unwrap();
+                socket_send.send(&buf[..len]).await.unwrap();
                 println!("send: {:?}", len);
             }
         }

@@ -11,12 +11,13 @@
 /* ********************************************************************************************************** */
 
 use std::net::SocketAddr;
-use std::net::UdpSocket;
 use std::process::Command;
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 use std::{env, process};
+
+use tokio::net::UdpSocket;
 
 use tun_tap::{Iface, Mode};
 
@@ -42,7 +43,7 @@ pub async fn server() {
         });
 
     // Create socket
-    let socket = UdpSocket::bind(&loc_address).unwrap();
+    let socket = UdpSocket::bind(&loc_address).await.unwrap();
     let socket = Arc::new(socket);
 
     // Create interface
@@ -67,17 +68,13 @@ pub async fn server() {
         let socket_send = socket.clone();
         let socket_recv = socket.clone();
         let mut buf = vec![0; 1];
-        socket_recv.set_read_timeout(None).unwrap();
-        let (_, addr) = socket.recv_from(&mut buf).unwrap();
+        let (_, addr) = socket.recv_from(&mut buf).await.unwrap();
         let writer = tokio::task::spawn(async move {
             println!("w loaded");
-            socket_recv
-                .set_read_timeout(Some(Duration::from_millis(1500)))
-                .unwrap();
             loop {
                 println!("w call");
                 let mut buf = vec![0; 1518];
-                let len = match socket_recv.recv(&mut buf) {
+                let len = match socket_recv.recv(&mut buf).await {
                     Ok(len) => len,
                     Err(_) => break,
                 };
@@ -99,7 +96,7 @@ pub async fn server() {
                 let len = iface_reader.recv(&mut buf).unwrap();
                 println!("if recv");
                 if len > 0 {
-                    socket_send.send_to(&buf[..len], &addr).unwrap();
+                    socket_send.send_to(&buf[..len], &addr).await.unwrap();
                     println!("send: {:?}", len);
                 }
             }
