@@ -99,7 +99,9 @@ pub async fn client() {
             let len = socket_recv.recv(&mut buf).await.unwrap();
             println!("recv: {:?}", len);
             if len > 0 {
+                println!("----------try");
                 iface_writer.send(&buf[..len]).unwrap();
+                println!("----------end");
             } else if len == 0 {
             } else {
                 println!("receive invalid byte")
