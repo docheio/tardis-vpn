@@ -13,7 +13,6 @@
 use std::net::SocketAddr;
 use std::process::Command;
 use std::sync::Arc;
-use std::time::Duration;
 use std::{env, process, thread};
 
 use std::net::UdpSocket;
@@ -67,52 +66,30 @@ pub async fn server() {
         let socket_send = socket.clone();
         let socket_recv = socket.clone();
         let mut buf = vec![0; 1];
-        // socket_recv
-        //     .set_read_timeout(None)
-        //     .expect("set_read_timeout call failed");
         let (_, addr) = socket.recv_from(&mut buf).unwrap();
-
-        // socket_recv
-        //     .set_read_timeout(Some(Duration::from_secs(5)))
-        //     .expect("set_read_timeout call failed");
         let writer = thread::spawn(move || {
             println!("w loaded");
             loop {
                 let mut buf = vec![0; 1518];
-                let len = match socket_recv.recv(&mut buf) {
-                    Ok(len) => len,
-                    Err(_) => {
-                        break;
-                    }
-                };
+                let len = socket_recv.recv(&mut buf).unwrap();
                 println!("recv: {:?}", len);
                 if len > 0 {
                     iface_writer.send(&buf[..len]).unwrap();
                 }
             }
-            println!("w end");
         });
         let reader = thread::spawn(move || {
-            println!("r loaded");
             loop {
                 let mut buf = vec![0; 1518];
-                if writer.is_finished() {
-                    break;
-                }
                 let len = iface_reader.recv(&mut buf).unwrap();
                 println!("if recv");
                 if len > 0 {
-                    match socket_send.send_to(&buf[..len], &addr) {
-                        Ok(_) => {}
-                        Err(_) => {
-                            break;
-                        }
-                    };
+                    socket_send.send_to(&buf[..len], &addr).unwrap();
                     println!("send: {:?}", len);
                 }
             }
-            println!("r end");
         });
+        writer.join().unwrap();
         reader.join().unwrap();
     }
 }
