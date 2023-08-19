@@ -75,6 +75,7 @@ pub async fn server() {
                 .set_read_timeout(Some(Duration::from_millis(1500)))
                 .unwrap();
             loop {
+                println!("w call");
                 let mut buf = vec![0; 1518];
                 let len = match socket_recv.recv(&mut buf) {
                     Ok(len) => len,
@@ -94,6 +95,7 @@ pub async fn server() {
         let reader = thread::spawn(move || {
             println!("r loaded");
             iface_reader.set_non_blocking().unwrap();
+            println!("r call");
             loop {
                 let mut buf = vec![0; 1518];
                 if writer.is_finished() {
