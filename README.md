@@ -32,3 +32,6 @@ tardis client <TARGET-IP>:<PORT> <INTERFACE-NAME> <INTERFACE-IP>/<IP-RANGE>
 # Must edit config „/etc/systemd/system/tardisd.service“
 systemctl enable --now tardisd
 ```
+
+## Issue
+CPU is 100% in server mode and client mode
