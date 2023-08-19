@@ -96,7 +96,7 @@ pub async fn client() {
             let len = iface_reader.recv(&mut buf).unwrap();
             println!("{:?}", buf);
             println!("if recv");
-            if len > 18 {
+            if len > 0 {
                 socket_send.send(&buf[..len]).unwrap();
                 println!("send: {:?}", len);
             }
