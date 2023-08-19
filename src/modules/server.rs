@@ -80,7 +80,8 @@ pub async fn server() {
                     Ok(len) => len,
                     Err(e) => {
                         eprintln!("ERROR[RECV]: {:?}", e);
-                        break},
+                        break;
+                    }
                 };
                 iface_writer.send(&buf[..len]).unwrap();
                 println!("recv: {:?}", len);
@@ -100,11 +101,8 @@ pub async fn server() {
             }
         });
 
-        loop {
-            if writer.is_finished() {
-                reader.abort();
-                break;
-            }
-        }
+        writer.await.unwrap();
+        reader.abort();
+        println!("r end");
     }
 }

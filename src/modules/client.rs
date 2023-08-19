@@ -104,18 +104,18 @@ pub async fn client() {
         println!("r loaded");
         loop {
             let mut buf = vec![0; 1518];
-            let len = iface_reader.recv(&mut buf).unwrap();
+            let len = match iface_reader.recv(&mut buf) {
+                Ok(len) => len,
+                Err(_) => continue,
+            };
             if len > 0 {
                 socket_send.send(&buf[..len]).unwrap();
                 println!("send: {:?}", len);
             }
         }
     });
-
-    loop {
-        if writer.is_finished() {
-            reader.abort();
-            break;
-        }
-    }
+    
+    writer.await.unwrap();
+    reader.abort();
+    println!("r end");
 }
