@@ -78,11 +78,10 @@ pub async fn server() {
                     Ok(len) => len,
                     Err(_) => break,
                 };
+                println!("recv: {:?}", len);
                 if len > 0 {
                     iface_writer.send(&buf[..len]).unwrap();
-                    println!("recv: {:?}", len);
                 } else if len == 0 {
-                    println!("keep")
                 } else {
                     println!("receive invalid byte")
                 }
@@ -94,7 +93,6 @@ pub async fn server() {
             loop {
                 let mut buf = vec![0; 1518];
                 let len = iface_reader.recv(&mut buf).unwrap();
-                println!("if recv");
                 if len > 0 {
                     socket_send.send_to(&buf[..len], &addr).await.unwrap();
                     println!("send: {:?}", len);
