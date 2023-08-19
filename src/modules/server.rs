@@ -80,8 +80,14 @@ pub async fn server() {
                     Ok(len) => len,
                     Err(_) => break,
                 };
-                iface_writer.send(&buf[..len]).unwrap();
-                println!("recv: {:?}", len);
+                if len > 0 {
+                    iface_writer.send(&buf[..len]).unwrap();
+                    println!("recv: {:?}", len);
+                } else if len == 0 {
+                    println!("keep")
+                } else {
+                    println!("receive invalid byte")
+                }
             }
             println!("w end");
         });
