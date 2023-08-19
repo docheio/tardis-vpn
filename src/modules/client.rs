@@ -15,7 +15,7 @@ use std::process::Command;
 use std::sync::Arc;
 use std::time::Duration;
 use std::{env, process, thread};
-use tokio::{spawn, time::sleep};
+use tokio;
 
 use std::net::UdpSocket;
 
@@ -76,7 +76,7 @@ pub async fn client() {
     let buf = vec![0; 1];
     socket.send(&buf).unwrap();
 
-    let keeper = spawn(async move {
+    let keeper = tokio::task::spawn(async move {
         println!("k loaded");
         loop {
             let buf = vec![0; 0];
@@ -85,11 +85,11 @@ pub async fn client() {
                 Err(_) => break,
             };
             println!("send: keep");
-            sleep(Duration::from_millis(1000)).await;
+            tokio::time::sleep(Duration::from_millis(1000)).await;
         }
         println!("k end")
     });
-    let writer = spawn(async move {
+    let writer = tokio::task::spawn(async move {
         println!("w loaded");
         loop {
             let mut buf = vec![0; 1518];
@@ -102,7 +102,7 @@ pub async fn client() {
         }
         println!("w end");
     });
-    let reader = spawn(async move {
+    let reader = tokio::task::spawn(async move {
         println!("r loaded");
         loop {
             let mut buf = vec![0; 1518];

@@ -17,7 +17,6 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 use std::{env, process};
-use tokio::spawn;
 
 use tun_tap::{Iface, Mode};
 
@@ -70,7 +69,7 @@ pub async fn server() {
         let mut buf = vec![0; 1];
         socket_recv.set_read_timeout(None).unwrap();
         let (_, addr) = socket.recv_from(&mut buf).unwrap();
-        let writer = spawn(async move {
+        let writer = tokio::task::spawn(async move {
             println!("w loaded");
             socket_recv
                 .set_read_timeout(Some(Duration::from_millis(1500)))
@@ -93,7 +92,7 @@ pub async fn server() {
             }
             println!("w end");
         });
-        let reader = spawn(async move {
+        let reader = tokio::task::spawn(async move {
             println!("r loaded");
             loop {
                 let mut buf = vec![0; 1518];
