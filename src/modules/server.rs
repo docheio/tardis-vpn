@@ -14,6 +14,7 @@ use std::net::SocketAddr;
 use std::net::UdpSocket;
 use std::process::Command;
 use std::sync::Arc;
+use std::thread;
 use std::time::Duration;
 use std::{env, process};
 use tokio::spawn;
@@ -105,8 +106,11 @@ pub async fn server() {
             }
         });
 
-        writer.await.unwrap();
-        reader.abort();
-        println!("r end");
+        loop {
+            if writer.is_finished() {
+                reader.abort();
+            }
+            thread::sleep(Duration::from_secs(1));
+        }
     }
 }
