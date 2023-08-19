@@ -85,7 +85,7 @@ pub async fn client() {
                 Err(_) => break,
             };
             println!("send: keep");
-            sleep(Duration::from_millis(1000)).await;g
+            sleep(Duration::from_millis(1000)).await;
         }
     });
     let writer = spawn(async move {
