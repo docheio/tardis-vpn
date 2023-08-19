@@ -80,12 +80,12 @@ pub async fn client() {
         println!("k loaded");
         loop {
             let buf = vec![0; 0];
-            sleep(Duration::from_millis(1000)).await;
             match socket_keep.send(&buf) {
                 Ok(_) => {}
                 Err(_) => break,
             };
-            println!("send: keep")
+            println!("send: keep");
+            sleep(Duration::from_millis(1000)).await;g
         }
     });
     let writer = spawn(async move {
@@ -113,7 +113,7 @@ pub async fn client() {
             }
         }
     });
-    
+
     loop {
         if writer.is_finished() {
             reader.abort();
