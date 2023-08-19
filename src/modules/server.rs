@@ -13,6 +13,7 @@
 use std::net::SocketAddr;
 use std::process::Command;
 use std::sync::Arc;
+use std::time::Duration;
 use std::{env, process, thread};
 
 use std::net::UdpSocket;
@@ -66,20 +67,32 @@ pub async fn server() {
         let socket_send = socket.clone();
         let socket_recv = socket.clone();
         let mut buf = vec![0; 1];
+        socket_recv.set_read_timeout(None).unwrap();
         let (_, addr) = socket.recv_from(&mut buf).unwrap();
         let writer = thread::spawn(move || {
             println!("w loaded");
+            socket_recv
+                .set_read_timeout(Some(Duration::from_millis(1500)))
+                .unwrap();
             loop {
                 let mut buf = vec![0; 1518];
-                let len = socket_recv.recv(&mut buf).unwrap();
+                let len = match socket_recv.recv(&mut buf) {
+                    Ok(len) => len,
+                    Err(_) => break,
+                };
                 iface_writer.send(&buf[..len]).unwrap();
                 println!("recv: {:?}", len);
             }
+            println!("w end");
         });
         let reader = thread::spawn(move || {
             println!("r loaded");
+            iface_reader.set_non_blocking().unwrap();
             loop {
                 let mut buf = vec![0; 1518];
+                if writer.is_finished() {
+                    break;
+                }
                 let len = iface_reader.recv(&mut buf).unwrap();
                 println!("if recv");
                 if len > 0 {
@@ -88,7 +101,6 @@ pub async fn server() {
                 }
             }
         });
-        writer.join().unwrap();
         reader.join().unwrap();
     }
 }
