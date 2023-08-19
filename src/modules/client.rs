@@ -96,12 +96,14 @@ pub async fn client() {
             if keeper.is_finished() {
                 break;
             }
+            println!("----------0");
             let len = socket_recv.recv(&mut buf).await.unwrap();
+            println!("----------1");
             println!("recv: {:?}", len);
             if len > 0 {
-                println!("----------try");
+                println!("----------2");
                 iface_writer.send(&buf[..len]).unwrap();
-                println!("----------end");
+                println!("----------3");
             } else if len == 0 {
             } else {
                 println!("receive invalid byte")
