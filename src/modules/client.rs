@@ -14,7 +14,8 @@ use std::net::SocketAddr;
 use std::process::Command;
 use std::sync::Arc;
 use std::time::Duration;
-use std::{env, process, thread};
+use std::{env, process};
+use tokio::{spawn, time::sleep};
 
 use std::net::UdpSocket;
 
@@ -75,11 +76,11 @@ pub async fn client() {
     let buf = vec![0; 1];
     socket.send(&buf).unwrap();
 
-    let keeper = thread::spawn(move || {
+    let keeper = spawn(async move {
         println!("k loaded");
         loop {
             let buf = vec![0; 0];
-            thread::sleep(Duration::from_millis(1000));
+            sleep(Duration::from_millis(1000)).await;
             match socket_keep.send(&buf) {
                 Ok(_) => {}
                 Err(_) => break,
@@ -87,7 +88,7 @@ pub async fn client() {
             println!("send: keep")
         }
     });
-    let writer = thread::spawn(move || {
+    let writer = spawn(async move {
         println!("w loaded");
         iface_writer.set_non_blocking().unwrap();
         loop {
@@ -100,14 +101,11 @@ pub async fn client() {
             println!("recv: {:?}", len);
         }
     });
-    let reader = thread::spawn(move || {
+    let reader = spawn(async move {
         println!("r loaded");
         iface_reader.set_non_blocking().unwrap();
         loop {
             let mut buf = vec![0; 1518];
-            if writer.is_finished() {
-                break;
-            }
             let len = iface_reader.recv(&mut buf).unwrap();
             if len > 0 {
                 socket_send.send(&buf[..len]).unwrap();
@@ -115,5 +113,11 @@ pub async fn client() {
             }
         }
     });
-    reader.join().unwrap();
+    
+    loop {
+        if writer.is_finished() {
+            reader.abort();
+            break;
+        }
+    }
 }
