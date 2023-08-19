@@ -111,6 +111,7 @@ pub async fn server() {
                     println!("send: {:?}", len);
                 }
             }
+            println!("r end");
         });
         reader.join().unwrap();
     }
