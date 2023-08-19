@@ -75,16 +75,20 @@ pub async fn server() {
                 .set_read_timeout(Some(Duration::from_millis(1500)))
                 .unwrap();
             loop {
+                println!("w call");
                 let mut buf = vec![0; 1518];
                 let len = match socket_recv.recv(&mut buf) {
                     Ok(len) => len,
-                    Err(e) => {
-                        eprintln!("ERROR[RECV]: {:?}", e);
-                        break;
-                    }
+                    Err(_) => break,
                 };
-                iface_writer.send(&buf[..len]).unwrap();
-                println!("recv: {:?}", len);
+                if len > 0 {
+                    iface_writer.send(&buf[..len]).unwrap();
+                    println!("recv: {:?}", len);
+                } else if len == 0 {
+                    println!("keep")
+                } else {
+                    println!("receive invalid byte")
+                }
             }
             println!("w end");
         });

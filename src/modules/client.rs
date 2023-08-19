@@ -87,6 +87,7 @@ pub async fn client() {
             println!("send: keep");
             sleep(Duration::from_millis(1000)).await;
         }
+        println!("k end")
     });
     let writer = spawn(async move {
         println!("w loaded");
@@ -99,6 +100,7 @@ pub async fn client() {
             iface_writer.send(&buf[..len]).unwrap();
             println!("recv: {:?}", len);
         }
+        println!("w end");
     });
     let reader = spawn(async move {
         println!("r loaded");
