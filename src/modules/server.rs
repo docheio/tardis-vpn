@@ -77,6 +77,7 @@ pub async fn server() {
             }
         });
         let reader = thread::spawn(move || loop {
+            println!("r loaded");
             let mut buf = vec![0; 1518];
             let len = iface_reader.recv(&mut buf).unwrap();
             println!("if recv");
