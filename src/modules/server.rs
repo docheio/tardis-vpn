@@ -79,8 +79,7 @@ pub async fn server() {
                 let len = match socket_recv.recv(&mut buf) {
                     Ok(len) => len,
                     Err(err) => {
-                        eprintln!("ERROR[RECV]: {:?}", err);
-                        break;
+                        continue;
                     }
                 };
                 iface_writer.send(&buf[..len]).unwrap();
