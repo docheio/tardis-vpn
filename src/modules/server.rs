@@ -71,8 +71,8 @@ pub async fn server() {
         let (_, addr) = socket.recv_from(&mut buf).await.unwrap();
         let writer = tokio::task::spawn(async move {
             println!("w loaded");
+            iface_writer.set_non_blocking().unwrap();
             loop {
-                println!("w call");
                 let mut buf = vec![0; 1518];
                 let len = match socket_recv.recv(&mut buf).await {
                     Ok(len) => len,

@@ -91,13 +91,21 @@ pub async fn client() {
     });
     let writer = tokio::task::spawn(async move {
         println!("w loaded");
+        iface_writer.set_non_blocking().unwrap();
         loop {
             let mut buf = vec![0; 1518];
             if keeper.is_finished() {
                 break;
             }
             let len = socket_recv.recv(&mut buf).await.unwrap();
-            iface_writer.send(&buf[..len]).unwrap();
+            if len > 0 {
+                iface_writer.send(&buf[..len]).unwrap();
+                println!("recv: {:?}", len);
+            } else if len == 0 {
+                println!("keep")
+            } else {
+                println!("receive invalid byte")
+            }
             println!("recv: {:?}", len);
         }
         println!("w end");
