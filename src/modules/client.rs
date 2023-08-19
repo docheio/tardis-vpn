@@ -118,6 +118,7 @@ pub async fn client() {
     });
     loop {
         if writer.is_finished() {
+            println!("closed");
             reader.abort();
         }
         thread::sleep(Duration::from_secs(1));
