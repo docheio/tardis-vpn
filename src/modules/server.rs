@@ -89,7 +89,6 @@ pub async fn server() {
         });
         let reader = spawn(async move {
             println!("r loaded");
-            iface_reader.set_non_blocking().unwrap();
             loop {
                 let mut buf = vec![0; 1518];
                 let len = iface_reader.recv(&mut buf).unwrap();

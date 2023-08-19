@@ -90,7 +90,6 @@ pub async fn client() {
     });
     let writer = spawn(async move {
         println!("w loaded");
-        iface_writer.set_non_blocking().unwrap();
         loop {
             let mut buf = vec![0; 1518];
             if keeper.is_finished() {
@@ -103,7 +102,6 @@ pub async fn client() {
     });
     let reader = spawn(async move {
         println!("r loaded");
-        iface_reader.set_non_blocking().unwrap();
         loop {
             let mut buf = vec![0; 1518];
             let len = iface_reader.recv(&mut buf).unwrap();
