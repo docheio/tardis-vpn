@@ -67,7 +67,7 @@ pub async fn client() {
     let iface = Arc::new(iface);
     let iface_writer = Arc::clone(&iface);
     let iface_reader = Arc::clone(&iface);
-    let socket_keep = socket.clone();
+    // let socket_keep = socket.clone();
     let socket_send = socket.clone();
     let socket_recv = socket.clone();
 
@@ -75,11 +75,6 @@ pub async fn client() {
     let buf = vec![0; 1];
     socket.send(&buf).unwrap();
 
-    let keeper = thread::spawn(move || loop {
-        thread::sleep(Duration::from_secs(4));
-        socket_keep.send(&[]).unwrap();
-        println!("keep");
-    });
     let writer = thread::spawn(move || {
         println!("w loaded");
         loop {
@@ -102,7 +97,7 @@ pub async fn client() {
             }
         }
     });
-    keeper.join().unwrap();
+    // keeper.join().unwrap();
     writer.join().unwrap();
     reader.join().unwrap();
 }
