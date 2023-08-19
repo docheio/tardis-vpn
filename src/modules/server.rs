@@ -93,7 +93,12 @@ pub async fn server() {
                 if writer.is_finished() {
                     break;
                 }
-                let len = iface_reader.recv(&mut buf).unwrap();
+                let len = match iface_reader.recv(&mut buf) {
+                    Ok(len) => len,
+                    Err(_) => {
+                        continue;
+                    }
+                };
                 println!("if recv");
                 if len > 0 {
                     socket_send.send_to(&buf[..len], &addr).unwrap();
