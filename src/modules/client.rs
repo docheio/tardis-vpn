@@ -91,7 +91,6 @@ pub async fn client() {
     });
     let writer = tokio::task::spawn(async move {
         println!("w loaded");
-        iface_writer.set_non_blocking().unwrap();
         loop {
             let mut buf = vec![0; 1518];
             if keeper.is_finished() {
