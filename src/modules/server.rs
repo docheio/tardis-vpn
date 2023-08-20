@@ -12,7 +12,7 @@
 
 use std::net::SocketAddr;
 use std::process::Command;
-use std::sync::{mpsc, Arc};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{env, process, thread};
 
@@ -63,35 +63,32 @@ pub async fn server() {
     let iface = Arc::new(iface);
     let iface_reader = iface.clone();
     let socket_send = socket.clone();
+    let s_addr: Arc<Mutex<Option<SocketAddr>>> = Arc::new(Mutex::new(None));
 
-    let (tx, rx) = mpsc::channel::<SocketAddr>();
-
-    let reader = thread::spawn(move || {
-        println!("r loaded");
-        loop {
-            let mut buf = vec![0; 1518];
-            let len = match iface_reader.recv(&mut buf) {
-                Ok(len) => len,
-                Err(_) => continue,
-            };
-            match rx.try_recv() {
-                Ok(addr) => {
-                    println!("if recv");
-                    if len > 0 {
-                        match socket_send.send_to(&buf[..len], addr) {
-                            Ok(x) => x,
-                            Err(_) => 0,
-                        };
-                        println!("send: {:?}", len);
+    let reader = thread::spawn({
+        let s_addr = s_addr.clone();
+        move || {
+            println!("r loaded");
+            loop {
+                let mut buf = vec![0; 1518];
+                let s_addr = s_addr.lock().unwrap();
+                let len = iface_reader.recv(&mut buf).unwrap();
+                println!("if recv");
+                match *s_addr {
+                    None => {}
+                    Some(addr) => {
+                        if len > 0 {
+                            match socket_send.send_to(&buf[..len], addr) {
+                                Ok(x) => x,
+                                Err(_) => 0,
+                            };
+                            println!("send: {:?}", len);
+                        }
                     }
                 }
-                Err(mpsc::TryRecvError::Empty) => {
-                    println!("empty");
-                }
-                Err(mpsc::TryRecvError::Disconnected) => break,
             }
+            // println!("r end");
         }
-        println!("r end");
     });
     loop {
         let iface_writer = iface.clone();
@@ -99,7 +96,8 @@ pub async fn server() {
         let mut buf = vec![0; 1];
         socket_recv.set_read_timeout(None).unwrap();
         let (_, addr) = socket.recv_from(&mut buf).unwrap();
-        tx.send(addr).unwrap();
+        let mut s_addr = s_addr.lock().unwrap();
+        *s_addr = Some(addr);
         let writer = thread::spawn(move || {
             println!("w loaded");
             socket_recv
@@ -122,6 +120,7 @@ pub async fn server() {
             }
             println!("w end");
         });
+        *s_addr = None;
         writer.join().unwrap();
         if reader.is_finished() {
             break;
