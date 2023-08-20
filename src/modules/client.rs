@@ -84,13 +84,11 @@ pub async fn client() {
                 Ok(_) => {}
                 Err(_) => break,
             };
-            println!("send: keep")
         }
         println!("k end");
     });
     let writer = thread::spawn(move || {
         println!("w loaded");
-        iface_writer.set_non_blocking().unwrap();
         loop {
             let mut buf = vec![0; 1518];
             if keeper.is_finished() {
@@ -104,7 +102,6 @@ pub async fn client() {
     });
     let reader = thread::spawn(move || {
         println!("r loaded");
-        iface_reader.set_non_blocking().unwrap();
         loop {
             let mut buf = vec![0; 1518];
             if writer.is_finished() {

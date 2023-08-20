@@ -12,7 +12,7 @@
 
 use std::net::SocketAddr;
 use std::process::Command;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{env, process, thread};
 
@@ -61,21 +61,62 @@ pub async fn server() {
     cmd("ip", &["link", "set", "up", "dev", iface.name()]);
 
     let iface = Arc::new(iface);
+    let iface_reader = iface.clone();
+    let socket_send = socket.clone();
+    let s_addr: Arc<Mutex<Option<SocketAddr>>> = Arc::new(Mutex::new(None));
+    let r_addr = s_addr.clone();
+    let w_addr = s_addr.clone();
+
+    let reader = thread::spawn({
+        move || {
+            println!("r loaded");
+            loop {
+                let mut buf = vec![0; 1518];
+                println!("----------0----------");
+                let r_addr = r_addr.lock().unwrap();
+                println!("----------1----------");
+                let len = match iface_reader.recv(&mut buf) {
+                    Ok(len) => len,
+                    Err(e) => {
+                        println!("{:?}", e);
+                        break;
+                    }
+                };
+                println!("if recv");
+                match *r_addr {
+                    None => {
+                        println!("ignored");
+                    }
+                    Some(addr) => {
+                        if len > 0 {
+                            println!("obeyd");
+                            match socket_send.send_to(&buf[..len], addr) {
+                                Ok(x) => x,
+                                Err(_) => 0,
+                            };
+                            println!("send: {:?}", len);
+                        }
+                    }
+                }
+            }
+        }
+    });
     loop {
-        let iface_writer = Arc::clone(&iface);
-        let iface_reader = Arc::clone(&iface);
-        let socket_send = socket.clone();
+        let iface_writer = iface.clone();
         let socket_recv = socket.clone();
         let mut buf = vec![0; 1];
         socket_recv.set_read_timeout(None).unwrap();
         let (_, addr) = socket.recv_from(&mut buf).unwrap();
+        {
+            let mut w_addr = w_addr.lock().unwrap();
+            *w_addr = Some(addr);
+        };
         let writer = thread::spawn(move || {
             println!("w loaded");
             socket_recv
                 .set_read_timeout(Some(Duration::from_millis(1500)))
                 .unwrap();
             loop {
-                println!("w call");
                 let mut buf = vec![0; 1518];
                 let len = match socket_recv.recv(&mut buf) {
                     Ok(len) => len,
@@ -85,34 +126,20 @@ pub async fn server() {
                     iface_writer.send(&buf[..len]).unwrap();
                     println!("recv: {:?}", len);
                 } else if len == 0 {
-                    println!("keep")
+                    continue;
                 } else {
-                    println!("receive invalid byte")
+                    println!("receive invalid byte");
                 }
             }
             println!("w end");
         });
-        let reader = thread::spawn(move || {
-            println!("r loaded");
-            iface_reader.set_non_blocking().unwrap();
-            loop {
-                println!("r call");
-                let mut buf = vec![0; 1518];
-                if writer.is_finished() {
-                    break;
-                }
-                let len = match iface_reader.recv(&mut buf) {
-                    Ok(len) => len,
-                    Err(_) => continue,
-                };
-                println!("if recv");
-                if len > 0 {
-                    socket_send.send_to(&buf[..len], &addr).unwrap();
-                    println!("send: {:?}", len);
-                }
-            }
-            println!("r end");
-        });
-        reader.join().unwrap();
+        writer.join().unwrap();
+        {
+            let mut w_addr = w_addr.lock().unwrap();
+            *w_addr = None;
+        };
+        if reader.is_finished() {
+            break;
+        }
     }
 }
