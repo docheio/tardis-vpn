@@ -76,10 +76,11 @@ pub async fn server() {
                 println!("if recv");
                 match *s_addr {
                     None => {
-                        println!("ignore");
+                        println!("ignored");
                     }
                     Some(addr) => {
                         if len > 0 {
+                            println!("obeyd");
                             match socket_send.send_to(&buf[..len], addr) {
                                 Ok(x) => x,
                                 Err(_) => 0,
