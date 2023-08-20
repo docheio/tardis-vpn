@@ -20,16 +20,6 @@ use std::net::UdpSocket;
 
 use tun_tap::{Iface, Mode};
 
-fn cmd(cmd: &str, args: &[&str]) {
-    let ecode = Command::new(cmd)
-        .args(args)
-        .spawn()
-        .unwrap()
-        .wait()
-        .unwrap();
-    assert!(ecode.success(), "Failed to execte {}", cmd);
-}
-
 pub async fn server() {
     // Read Local & Remote IP from args
     let loc_address = env::args()
@@ -42,23 +32,58 @@ pub async fn server() {
         });
 
     // Create socket
-    let socket = UdpSocket::bind(&loc_address).unwrap();
+    let socket = match UdpSocket::bind(&loc_address) {
+        Ok(socket) => socket,
+        Err(e) => {
+            eprintln!("ERROR: {:?}", e);
+            process::exit(1);
+        }
+    };
     let socket = Arc::new(socket);
 
     // Create interface
     let name = &env::args().nth(3).expect("Unable to read Interface name");
-    let iface = Iface::new(&name, Mode::Tap).unwrap_or_else(|err| {
-        eprintln!("Failed to configure the interface name: {}", err);
-        process::exit(1);
-    });
+    let iface = match Iface::new(&name, Mode::Tap) {
+        Ok(iface) => iface,
+        Err(e) => {
+            eprintln!("ERROR: {:?}", e);
+            process::exit(1);
+        }
+    };
     let iface = Arc::new(iface);
 
     // Configure the „local“ (kernel) endpoint.
-    let ip = &env::args()
-        .nth(4)
-        .expect("Unable to recognize remote interface IP");
-    cmd("ip", &["addr", "add", "dev", iface.name(), &ip]);
-    cmd("ip", &["link", "set", "up", "dev", iface.name()]);
+    let ip = match env::args().nth(4) {
+        Some(s) => s,
+        None => {
+            eprintln!("ERROR: {:?}", "Unable to read IP");
+            process::exit(1);
+        }
+    };
+    match Command::new("ip")
+        .args(["addr", "add", "dev", iface.name(), &ip])
+        .spawn()
+        .unwrap()
+        .wait()
+    {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("ERROR: {:?}", e);
+            process::exit(1);
+        }
+    };
+    match Command::new("ip")
+        .args(["link", "set", "up", "dev", iface.name()])
+        .spawn()
+        .unwrap()
+        .wait()
+    {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("ERROR: {:?}", e);
+            process::exit(1);
+        }
+    };
 
     let iface = Arc::new(iface);
     let iface_reader = iface.clone();
@@ -76,8 +101,8 @@ pub async fn server() {
                 let len = match iface_reader.recv(&mut buf) {
                     Ok(len) => len,
                     Err(e) => {
-                        println!("{:?}", e);
-                        break;
+                        eprintln!("ERROR: {:?}", e);
+                        process::exit(1);
                     }
                 };
                 println!("if recv");
@@ -120,13 +145,19 @@ pub async fn server() {
                     Ok(len) => len,
                     Err(_) => break,
                 };
-                if len > 0 {
-                    iface_writer.send(&buf[..len]).unwrap();
+                if 0 < len && len <= 1518 {
+                    match iface_writer.send(&buf[..len]) {
+                        Ok(s) => s,
+                        Err(e) => {
+                            eprintln!("ERROR: {:?}", e);
+                            process::exit(1);
+                        }
+                    };
                     println!("recv: {:?}", len);
                 } else if len == 0 {
                     continue;
                 } else {
-                    println!("receive invalid byte");
+                    eprintln!("WARN: Received invalid byte");
                 }
             }
             println!("w end");
