@@ -75,7 +75,9 @@ pub async fn server() {
                 let len = iface_reader.recv(&mut buf).unwrap();
                 println!("if recv");
                 match *s_addr {
-                    None => {}
+                    None => {
+                        println!("ignore");
+                    }
                     Some(addr) => {
                         if len > 0 {
                             match socket_send.send_to(&buf[..len], addr) {
