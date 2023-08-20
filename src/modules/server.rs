@@ -64,14 +64,15 @@ pub async fn server() {
     let iface_reader = iface.clone();
     let socket_send = socket.clone();
     let s_addr: Arc<Mutex<Option<SocketAddr>>> = Arc::new(Mutex::new(None));
+    let r_addr = s_addr.clone();
+    let w_addr = s_addr.clone();
 
     let reader = thread::spawn({
-        let s_addr = s_addr.clone();
         move || {
             println!("r loaded");
             loop {
                 let mut buf = vec![0; 1518];
-                let s_addr = s_addr.lock().unwrap();
+                let r_addr = r_addr.lock().unwrap();
                 let len = match iface_reader.recv(&mut buf) {
                     Ok(len) => len,
                     Err(e) => {
@@ -80,7 +81,7 @@ pub async fn server() {
                     }
                 };
                 println!("if recv");
-                match *s_addr {
+                match *r_addr {
                     None => {
                         println!("ignored");
                     }
@@ -104,8 +105,8 @@ pub async fn server() {
         let mut buf = vec![0; 1];
         socket_recv.set_read_timeout(None).unwrap();
         let (_, addr) = socket.recv_from(&mut buf).unwrap();
-        let mut s_addr = s_addr.lock().unwrap();
-        *s_addr = Some(addr);
+        let mut w_addr = w_addr.lock().unwrap();
+        *w_addr = Some(addr);
         let writer = thread::spawn(move || {
             println!("w loaded");
             socket_recv
@@ -128,7 +129,7 @@ pub async fn server() {
             }
             println!("w end");
         });
-        *s_addr = None;
+        *w_addr = None;
         writer.join().unwrap();
         if reader.is_finished() {
             break;
