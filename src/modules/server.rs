@@ -17,8 +17,7 @@ use std::thread;
 use std::time::Duration;
 use std::{env, process};
 
-use tokio_core::net::UdpSocket;
-use tokio_core::reactor::Core;
+use std::net::UdpSocket;
 
 use tun_tap::{Iface, Mode};
 
@@ -33,8 +32,6 @@ fn cmd(cmd: &str, args: &[&str]) {
 }
 
 pub async fn server() {
-    let core = Core::new().unwrap();
-
     // Read Local & Remote IP from args
     let loc_address = env::args()
         .nth(2)
@@ -46,7 +43,7 @@ pub async fn server() {
         });
 
     // Create socket
-    let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
+    let socket = UdpSocket::bind(&loc_address).unwrap();
     let socket = Arc::new(socket);
 
     // Create interface
