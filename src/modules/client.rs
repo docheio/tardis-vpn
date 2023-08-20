@@ -17,7 +17,8 @@ use std::time::Duration;
 use std::{env, process, thread};
 use tokio;
 
-use tokio::net::UdpSocket;
+use tokio_core::net::UdpSocket;
+use tokio_core::reactor::Core;
 
 use tun_tap::{Iface, Mode};
 
@@ -32,6 +33,8 @@ fn cmd(cmd: &str, args: &[&str]) {
 }
 
 pub async fn client() {
+    let core = Core::new().unwrap();
+
     // Read Local & Remote IP from args
     let loc_address = "0.0.0.0:0".parse::<SocketAddr>().unwrap_or_else(|err| {
         eprintln!("Unable to bind udp socket: {}", err);
@@ -47,7 +50,7 @@ pub async fn client() {
         });
 
     // Create socket
-    let socket = UdpSocket::bind(&loc_address).await.unwrap();
+    let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
     let socket = Arc::new(socket);
 
     // Create interface
@@ -72,15 +75,15 @@ pub async fn client() {
     let socket_send = socket.clone();
     let socket_recv = socket.clone();
 
-    socket.connect(&rem_address).await.unwrap();
+    socket.connect(&rem_address).unwrap();
     let buf = vec![0; 1];
-    socket.send(&buf).await.unwrap();
+    socket.send(&buf).unwrap();
 
     let keeper = tokio::task::spawn(async move {
         println!("k loaded");
         loop {
             let buf = vec![0; 0];
-            match socket_keep.send(&buf).await {
+            match socket_keep.send(&buf) {
                 Ok(_) => {}
                 Err(_) => break,
             };
@@ -97,7 +100,7 @@ pub async fn client() {
                 break;
             }
             println!("----------0");
-            let len = socket_recv.recv(&mut buf).await.unwrap();
+            let len = socket_recv.recv(&mut buf).unwrap();
             println!("----------1");
             println!("recv: {:?}", len);
             if len > 0 {
@@ -121,7 +124,7 @@ pub async fn client() {
                 Err(_) => continue,
             };
             if len > 0 {
-                socket_send.send(&buf[..len]).await.unwrap();
+                socket_send.send(&buf[..len]).unwrap();
                 println!("send: {:?}", len);
             }
         }

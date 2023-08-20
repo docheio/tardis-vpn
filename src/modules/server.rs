@@ -17,7 +17,8 @@ use std::thread;
 use std::time::Duration;
 use std::{env, process};
 
-use tokio::net::UdpSocket;
+use tokio_core::net::UdpSocket;
+use tokio_core::reactor::Core;
 
 use tun_tap::{Iface, Mode};
 
@@ -32,6 +33,8 @@ fn cmd(cmd: &str, args: &[&str]) {
 }
 
 pub async fn server() {
+    let core = Core::new().unwrap();
+
     // Read Local & Remote IP from args
     let loc_address = env::args()
         .nth(2)
@@ -43,7 +46,7 @@ pub async fn server() {
         });
 
     // Create socket
-    let socket = UdpSocket::bind(&loc_address).await.unwrap();
+    let socket = UdpSocket::bind(&loc_address, &core.handle()).unwrap();
     let socket = Arc::new(socket);
 
     // Create interface
@@ -68,12 +71,12 @@ pub async fn server() {
         let socket_send = socket.clone();
         let socket_recv = socket.clone();
         let mut buf = vec![0; 1];
-        let (_, addr) = socket.recv_from(&mut buf).await.unwrap();
+        let (_, addr) = socket.recv_from(&mut buf).unwrap();
         let writer = tokio::task::spawn(async move {
             println!("w loaded");
             loop {
                 let mut buf = vec![0; 1518];
-                let len = match socket_recv.recv(&mut buf).await {
+                let len = match socket_recv.recv(&mut buf) {
                     Ok(len) => len,
                     Err(_) => break,
                 };
@@ -93,7 +96,7 @@ pub async fn server() {
                 let mut buf = vec![0; 1518];
                 let len = iface_reader.recv(&mut buf).unwrap();
                 if len > 0 {
-                    socket_send.send_to(&buf[..len], &addr).await.unwrap();
+                    socket_send.send_to(&buf[..len], &addr).unwrap();
                     println!("send: {:?}", len);
                 }
             }
