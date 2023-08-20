@@ -135,7 +135,7 @@ pub async fn server() {
         });
         {
             let mut w_addr = w_addr.lock().unwrap();
-            *w_addr = Some(addr);
+            *w_addr = None;
         };
         writer.join().unwrap();
         if reader.is_finished() {
