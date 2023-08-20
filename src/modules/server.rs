@@ -85,7 +85,9 @@ pub async fn server() {
                         println!("send: {:?}", len);
                     }
                 }
-                Err(mpsc::TryRecvError::Empty) => {}
+                Err(mpsc::TryRecvError::Empty) => {
+                    println!("empty");
+                }
                 Err(mpsc::TryRecvError::Disconnected) => break,
             }
         }
