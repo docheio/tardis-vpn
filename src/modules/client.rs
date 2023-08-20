@@ -84,7 +84,6 @@ pub async fn client() {
                 Ok(_) => {}
                 Err(_) => break,
             };
-            println!("send: keep")
         }
         println!("k end");
     });

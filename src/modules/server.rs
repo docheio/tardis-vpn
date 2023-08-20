@@ -113,9 +113,9 @@ pub async fn server() {
                     iface_writer.send(&buf[..len]).unwrap();
                     println!("recv: {:?}", len);
                 } else if len == 0 {
-                    println!("keep")
+                    continue;
                 } else {
-                    println!("receive invalid byte")
+                    println!("receive invalid byte");
                 }
             }
             println!("w end");
