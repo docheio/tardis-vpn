@@ -86,6 +86,7 @@ pub async fn client() {
             };
             println!("send: keep")
         }
+        println!("k end");
     });
     let writer = thread::spawn(move || {
         println!("w loaded");
@@ -99,6 +100,7 @@ pub async fn client() {
             iface_writer.send(&buf[..len]).unwrap();
             println!("recv: {:?}", len);
         }
+        println!("w end");
     });
     let reader = thread::spawn(move || {
         println!("r loaded");
@@ -117,6 +119,7 @@ pub async fn client() {
                 println!("send: {:?}", len);
             }
         }
+        println!("r end");
     });
     reader.join().unwrap();
 }
