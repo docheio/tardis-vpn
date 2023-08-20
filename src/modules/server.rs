@@ -72,7 +72,9 @@ pub async fn server() {
             println!("r loaded");
             loop {
                 let mut buf = vec![0; 1518];
+                println!("----------0----------");
                 let r_addr = r_addr.lock().unwrap();
+                println!("----------1----------");
                 let len = match iface_reader.recv(&mut buf) {
                     Ok(len) => len,
                     Err(e) => {
