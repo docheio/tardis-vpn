@@ -133,11 +133,11 @@ pub async fn server() {
             }
             println!("w end");
         });
+        writer.join().unwrap();
         {
             let mut w_addr = w_addr.lock().unwrap();
             *w_addr = None;
         };
-        writer.join().unwrap();
         if reader.is_finished() {
             break;
         }
