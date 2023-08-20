@@ -107,8 +107,10 @@ pub async fn server() {
         let mut buf = vec![0; 1];
         socket_recv.set_read_timeout(None).unwrap();
         let (_, addr) = socket.recv_from(&mut buf).unwrap();
-        let mut w_addr = w_addr.lock().unwrap();
-        *w_addr = Some(addr);
+        {
+            let mut w_addr = w_addr.lock().unwrap();
+            *w_addr = Some(addr);
+        };
         let writer = thread::spawn(move || {
             println!("w loaded");
             socket_recv
@@ -131,7 +133,10 @@ pub async fn server() {
             }
             println!("w end");
         });
-        *w_addr = None;
+        {
+            let mut w_addr = w_addr.lock().unwrap();
+            *w_addr = Some(addr);
+        };
         writer.join().unwrap();
         if reader.is_finished() {
             break;
