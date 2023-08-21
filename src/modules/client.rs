@@ -47,7 +47,6 @@ pub async fn client() {
 
     // Create socket
     let socket = UdpSocket::bind(&loc_address).unwrap();
-    let socket = Arc::new(socket);
 
     // Create interface
     let name = &env::args().nth(3).expect("Unable to read Interface name");
@@ -58,26 +57,59 @@ pub async fn client() {
     let iface = Arc::new(iface);
 
     // Configure the „local“ (kernel) endpoint.
-    let ip = &env::args()
-        .nth(4)
-        .expect("Unable to recognize remote interface IP");
-    cmd("ip", &["addr", "add", "dev", iface.name(), &ip]);
-    cmd("ip", &["link", "set", "up", "dev", iface.name()]);
+    let ip = match env::args().nth(4) {
+        Some(s) => s,
+        None => {
+            eprintln!("ERROR: {:?}", "Unable to read IP");
+            process::exit(1);
+        }
+    };
+    match Command::new("ip")
+        .args(["addr", "add", "dev", iface.name(), &ip])
+        .spawn()
+        .unwrap()
+        .wait()
+    {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("ERROR: {:?}", e);
+            process::exit(1);
+        }
+    };
+    match Command::new("ip")
+        .args(["link", "set", "up", "dev", iface.name()])
+        .spawn()
+        .unwrap()
+        .wait()
+    {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("ERROR: {:?}", e);
+            process::exit(1);
+        }
+    };
 
     let iface = Arc::new(iface);
-    let iface_writer = Arc::clone(&iface);
-    let iface_reader = Arc::clone(&iface);
-    let socket_keep = socket.clone();
-    let socket_send = socket.clone();
-    let socket_recv = socket.clone();
+    let socket = Arc::new(socket);
 
-    socket.connect(&rem_address).unwrap();
-    let buf = vec![0; 1];
-    socket.send(&buf).unwrap();
+    match socket.connect(&rem_address) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("ERROR: {:?}", e);
+            process::exit(1);
+        }
+    };
+    match socket.send(&vec![0; 1]) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("ERROR: {:?}", e);
+            process::exit(1);
+        }
+    };
 
-    let keeper = thread::spawn(move || {
-        println!("k loaded");
-        loop {
+    let keeper = thread::spawn({
+        let socket_keep = socket.clone();
+        move || loop {
             let buf = vec![0; 0];
             thread::sleep(Duration::from_millis(1000));
             match socket_keep.send(&buf) {
@@ -85,38 +117,56 @@ pub async fn client() {
                 Err(_) => break,
             };
         }
-        println!("k end");
     });
-    let writer = thread::spawn(move || {
-        println!("w loaded");
-        loop {
+    let writer = thread::spawn({
+        let iface_writer = Arc::clone(&iface);
+        let socket_recv = socket.clone();
+        move || loop {
             let mut buf = vec![0; 1518];
             if keeper.is_finished() {
                 break;
             }
-            let len = socket_recv.recv(&mut buf).unwrap();
-            iface_writer.send(&buf[..len]).unwrap();
-            println!("recv: {:?}", len);
+            let len = match socket_recv.recv(&mut buf) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("ERROR: {:?}", e);
+                    continue;
+                }
+            };
+            match iface_writer.send(&buf[..len]) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("ERROR: {:?}", e);
+                    continue;
+                }
+            };
         }
-        println!("w end");
     });
-    let reader = thread::spawn(move || {
-        println!("r loaded");
-        loop {
+    let reader = thread::spawn({
+        let iface_reader = Arc::clone(&iface);
+        let socket_send = socket.clone();
+        move || loop {
             let mut buf = vec![0; 1518];
             if writer.is_finished() {
                 break;
             }
             let len = match iface_reader.recv(&mut buf) {
                 Ok(len) => len,
-                Err(_) => continue,
+                Err(e) => {
+                    eprintln!("ERROR: {:?}", e);
+                    process::exit(1);
+                }
             };
             if len > 0 {
-                socket_send.send(&buf[..len]).unwrap();
-                println!("send: {:?}", len);
+                match socket_send.send(&buf[..len]) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        eprintln!("ERROR: {:?}", e);
+                        process::exit(1);
+                    }
+                };
             }
         }
-        println!("r end");
     });
     reader.join().unwrap();
 }
