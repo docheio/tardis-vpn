@@ -20,16 +20,6 @@ use std::net::UdpSocket;
 
 use tun_tap::{Iface, Mode};
 
-fn cmd(cmd: &str, args: &[&str]) {
-    let ecode = Command::new(cmd)
-        .args(args)
-        .spawn()
-        .unwrap()
-        .wait()
-        .unwrap();
-    assert!(ecode.success(), "Failed to execte {}", cmd);
-}
-
 pub async fn client() {
     // Read Local & Remote IP from args
     let loc_address = "0.0.0.0:0".parse::<SocketAddr>().unwrap_or_else(|err| {
