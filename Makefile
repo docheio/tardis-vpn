@@ -10,29 +10,22 @@
 #                                                                                                              #
 # ************************************************************************************************************ #
 
-all: update build 
+NAME	= tardis
+
+$(NAME):
+	cargo build --release
+
+all: $(NAME)
 
 clean:
 	rm -rf ./target/release
 
 fclean:
-	rm -rf ./target;
-	rm -rf ./Cargo.lock;
+	rm -rf ./target
+	rm -rf ./Cargo.lock
 
-re: fclean build
-
-build:
-	cargo build --release;
-
-update:
-	git pull;
-
-upgrade: update build install
+re: fclean all
 
 install:
-	sudo install ./target/release/tardis /usr/local/bin;
-	cp ./service/tardisd.service /etc/systemd/system/;
-
-systemd:
-	systemctl daemon-reload;
-	systemctl enable --now tardisd;
+	sudo install ./target/release/tardis /usr/local/bin
+	cp ./service/tardisd.service /etc/systemd/system/
